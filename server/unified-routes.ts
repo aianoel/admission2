@@ -1254,8 +1254,11 @@ export function registerRoutes(app: Express): Server {
       }
 
       const hashedPassword = await bcrypt.hash(password, 12);
-      const [firstName, ...lastNameParts] = name.split(' ');
-      const lastName = lastNameParts.join(' ') || 'User';
+      
+      // Parse name safely
+      const nameParts = name.trim().split(' ').filter(part => part.length > 0);
+      const firstName = nameParts[0] || 'User';
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User';
 
       // Map role names to role IDs
       let roleId = 1; // default to admin
@@ -1272,19 +1275,21 @@ export function registerRoutes(app: Express): Server {
       }
 
       const newUser = await storage.createUser({
-        roleId,
         firstName,
         lastName,
+        name: `${firstName} ${lastName}`,
+        roleId,
         email,
         passwordHash: hashedPassword,
+        role: role, // Add role for compatibility
       });
 
       const responseUser = {
         id: newUser.id,
-        name: `${newUser.firstName} ${newUser.lastName}`,
+        name: newUser.name || `${newUser.firstName} ${newUser.lastName}`,
         email: newUser.email,
         role: newUser.roleId,
-        isActive: true,
+        isActive: newUser.isActive,
         createdAt: newUser.createdAt
       };
 

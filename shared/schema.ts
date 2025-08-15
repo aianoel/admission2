@@ -6,13 +6,18 @@ import { z } from 'zod';
 // Users table
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
-  name: varchar('name', { length: 100 }).notNull(),
-  email: varchar('email', { length: 100 }).unique().notNull(),
-  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
-  role: varchar('role', { length: 20 }).notNull(),
   roleId: integer('role_id').references(() => roles.id),
-  isActive: boolean('is_active').default(true),
+  firstName: text('first_name').notNull(),
+  lastName: text('last_name').notNull(),
+  email: text('email').unique().notNull(),
+  passwordHash: text('password_hash').notNull(),
+  profileImage: text('profile_image'),
   createdAt: timestamp('created_at').defaultNow(),
+  lastLogin: timestamp('last_login'),
+  sectionId: integer('section_id'),
+  name: varchar('name', { length: 100 }),
+  role: varchar('role', { length: 50 }),
+  isActive: boolean('is_active').default(true),
 });
 
 // Sections table
