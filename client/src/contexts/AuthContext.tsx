@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('AuthContext: Saved user:', savedUser);
     if (savedUser) {
       // Check if the user name is invalid (undefined undefined) and refresh if needed
-      if (!savedUser.name || savedUser.name.includes('undefined')) {
+      if (!savedUser.name || savedUser.name.includes('undefined') || savedUser.name.trim() === '') {
         console.log('AuthContext: User name is invalid, clearing cache and re-logging...');
         storage.removeUser();
         // Auto-login to get fresh user data

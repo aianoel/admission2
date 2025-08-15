@@ -134,7 +134,7 @@ export function registerRoutes(app: Express): Server {
 
       const responseUser = {
         id: user.id,
-        name: `${user.firstName} ${user.lastName}`,
+        name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
         email: user.email,
         role: roleName,
         roleId: user.roleId,
