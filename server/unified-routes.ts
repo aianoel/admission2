@@ -9,7 +9,7 @@ import { sql } from "drizzle-orm";
 
 // Extend Express Request to include session
 interface AuthenticatedRequest extends Request {
-  session: { 
+  session: Request['session'] & {
     userId?: number;
     user?: { 
       id: number; 

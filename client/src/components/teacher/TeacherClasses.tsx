@@ -29,7 +29,7 @@ export const TeacherClasses: React.FC = () => {
     );
   }
 
-  if (!assignments || assignments.length === 0) {
+  if (!assignments || !Array.isArray(assignments) || assignments.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -52,7 +52,8 @@ export const TeacherClasses: React.FC = () => {
   }
 
   // Group assignments by section
-  const sectionGroups = assignments.reduce((acc: any, assignment: any) => {
+  const assignmentArray = Array.isArray(assignments) ? assignments : [];
+  const sectionGroups = assignmentArray.reduce((acc: any, assignment: any) => {
     const sectionKey = `${assignment.section_id}`;
     if (!acc[sectionKey]) {
       acc[sectionKey] = {

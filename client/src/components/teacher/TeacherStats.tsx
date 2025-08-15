@@ -68,36 +68,36 @@ export const TeacherStats: React.FC = () => {
       <StatCard
         title="Teaching Sections"
         value={stats.totalSections}
-        subtitle="Active sections"
+        description="Active sections"
         icon={BookOpen}
-        color="blue"
+        iconColor="text-blue-600"
         trend={{ value: 0, label: "sections", isPositive: true }}
         data-testid="stat-sections"
       />
       <StatCard
         title="Total Students"
         value={stats.totalStudents}
-        subtitle="Across all sections"
+        description="Across all sections"
         icon={Users}
-        color="green"
+        iconColor="text-green-600"
         trend={{ value: 0, label: "students", isPositive: true }}
         data-testid="stat-students"
       />
       <StatCard
         title="Teaching Subjects"
         value={stats.totalSubjects}
-        subtitle="Different subjects"
+        description="Different subjects"
         icon={FileText}
-        color="purple"
+        iconColor="text-purple-600"
         trend={{ value: 0, label: "subjects", isPositive: true }}
         data-testid="stat-subjects"
       />
       <StatCard
         title="Grades Encoded"
         value={stats.totalGrades}
-        subtitle="This quarter"
+        description="This quarter"
         icon={ClipboardCheck}
-        color="orange"
+        iconColor="text-orange-600"
         trend={{ value: 0, label: "grades", isPositive: true }}
         data-testid="stat-grades"
       />
