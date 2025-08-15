@@ -20,9 +20,9 @@ export const TeacherStats: React.FC = () => {
     queryKey: ['/api/teacher/all-students'],
   });
 
-  // Calculate stats from real data
+  // Calculate stats from real data - show 0 if no assignments by Academic Coordinator
   const stats = React.useMemo(() => {
-    if (!assignments || !Array.isArray(assignments)) {
+    if (!assignments || !Array.isArray(assignments) || assignments.length === 0) {
       return {
         totalSections: 0,
         totalStudents: 0,
@@ -41,6 +41,27 @@ export const TeacherStats: React.FC = () => {
       totalGrades: 0, // This would need another API call to count grades
     };
   }, [assignments, allStudents]);
+
+  // Check if teacher has no assignments (clear dashboard state)
+  const hasNoAssignments = !assignments || !Array.isArray(assignments) || assignments.length === 0;
+
+  // Show message if no assignments from Academic Coordinator
+  if (hasNoAssignments) {
+    return (
+      <Card className="border-dashed border-2 border-gray-300">
+        <CardContent className="p-8 text-center">
+          <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">No Assignments Yet</h3>
+          <p className="text-sm text-gray-500">
+            Your Academic Coordinator hasn't assigned any sections, subjects, or students to you yet.
+          </p>
+          <p className="text-xs text-gray-400 mt-2">
+            Contact your Academic Coordinator to get assigned to classes.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

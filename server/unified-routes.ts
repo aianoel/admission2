@@ -347,15 +347,23 @@ export function registerRoutes(app: Express): Server {
   // Teacher Assignments (sections and subjects assigned to teacher) - Enhanced
   app.get("/api/teacher/assignments", async (req, res) => {
     try {
-      // Check if user is authenticated
-      if (!req.session?.userId) {
+      // Check if user is authenticated from session or try to get from request
+      const userId = req.session?.userId || req.session?.user?.id;
+      if (!userId) {
+        console.log("No authenticated user found in session:", req.session);
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      console.log("Fetching assignments for teacher ID:", req.session.userId);
+      console.log("Fetching assignments for teacher ID:", userId);
       
       // Use the new enhanced method that gets all teacher dashboard data
-      const dashboardData = await storage.getTeacherDashboardData(req.session.userId);
+      const dashboardData = await storage.getTeacherDashboardData(userId);
+      
+      // If no assignments found, return empty array (clear dashboard)
+      if (!dashboardData.sections.length && !dashboardData.subjects.length) {
+        console.log("No assignments found for teacher - returning empty dashboard");
+        return res.json([]);
+      }
       
       // Format for backward compatibility while providing enhanced data
       const formattedAssignments = dashboardData.sections.map((section: any, index: number) => ({
@@ -372,7 +380,8 @@ export function registerRoutes(app: Express): Server {
       res.json(formattedAssignments);
     } catch (error) {
       console.error("Error fetching teacher assignments:", error);
-      res.status(500).json({ error: "Internal server error" });
+      // Return empty array on error to show clear dashboard
+      res.json([]);
     }
   });
 
@@ -406,28 +415,28 @@ export function registerRoutes(app: Express): Server {
   // All students taught by the teacher (across all sections)
   app.get("/api/teacher/all-students", async (req, res) => {
     try {
-      // Check if user is authenticated
-      if (!req.session?.userId) {
-        return res.status(401).json({ error: "Authentication required" });
+      // Check if user is authenticated from session
+      const userId = req.session?.userId || req.session?.user?.id;
+      if (!userId) {
+        console.log("No authenticated user found for students request");
+        return res.json([]); // Return empty array instead of error for clear dashboard
       }
 
-      const result = await db.execute(sql`
-        SELECT DISTINCT
-          u.id,
-          u.first_name,
-          u.last_name,
-          u.name,
-          u.email
-        FROM users u
-        JOIN enrollments e ON u.id = e.student_id
-        JOIN teacher_assignments ta ON e.section_id = ta.section_id
-        WHERE ta.teacher_id = ${req.session.userId} AND u.role_id = 5
-        ORDER BY u.last_name, u.first_name
-      `);
-      res.json(result.rows);
+      // Get teacher dashboard data to check if they have assignments
+      const dashboardData = await storage.getTeacherDashboardData(userId);
+      
+      // If no assignments, return empty students list (clear dashboard)
+      if (!dashboardData.sections.length) {
+        console.log("No sections assigned to teacher - returning empty students list");
+        return res.json([]);
+      }
+
+      // Return assigned students
+      res.json(dashboardData.students || []);
     } catch (error) {
-      console.error("Error fetching all students:", error);
-      res.status(500).json({ error: "Internal server error" });
+      console.error("Error fetching teacher students:", error);
+      // Return empty array on error to show clear dashboard
+      res.json([]);
     }
   });
 

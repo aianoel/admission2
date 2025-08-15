@@ -11,6 +11,7 @@ import { GradeManagement } from '@/components/teacher/GradeManagement';
 import { TeacherStats } from '@/components/teacher/TeacherStats';
 import { TeacherClasses } from '@/components/teacher/TeacherClasses';
 import { RecentGrades } from '@/components/teacher/RecentGrades';
+import { EnhancedTeacherDashboard } from '@/components/teacher/EnhancedTeacherDashboard';
 import { BookOpen, Calendar, Trophy, Clock, FileText, Video, MessageSquare, BarChart3, Upload, Users, GraduationCap, ClipboardList } from 'lucide-react';
 
 export const TeacherDashboard: React.FC = () => {
@@ -95,57 +96,8 @@ export const TeacherDashboard: React.FC = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {/* Teacher-specific content */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* My Classes */}
-              <TeacherClasses />
-
-              {/* Recent Grades */}
-              <RecentGrades />
-
-              {/* Upcoming Meetings */}
-              <Card>
-                <CardContent className="p-0">
-                  <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Upcoming Meetings</h3>
-                  </div>
-                  <div className="p-6">
-                    <EmptyState 
-                      icon="fas fa-calendar"
-                      message="No scheduled meetings"
-                      description="Your scheduled meetings will appear here"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions Card */}
-              <Card>
-                <CardContent className="p-0">
-                  <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
-                  </div>
-                  <div className="p-6 space-y-3">
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start" 
-                      onClick={() => setActiveTab("grades")}
-                    >
-                      <ClipboardList className="h-4 w-4 mr-2" />
-                      Manage Grades
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Create Assignment
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Video className="h-4 w-4 mr-2" />
-                      Schedule Meeting
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Enhanced Teacher Dashboard showing assigned sections, subjects, students */}
+            <EnhancedTeacherDashboard />
           </TabsContent>
 
           <TabsContent value="grades" className="space-y-6">
