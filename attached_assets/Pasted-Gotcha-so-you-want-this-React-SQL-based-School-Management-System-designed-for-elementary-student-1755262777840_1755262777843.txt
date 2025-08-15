@@ -1,0 +1,147 @@
+Gotcha — so you want this React + SQL-based School Management System designed for elementary students, which means we’ll need to simplify certain features and adapt the database structure to fit an elementary school workflow.
+
+I’ll adjust the design so it’s kid-friendly while still giving Academic Coordinator, Principal, Teacher, and Student the same permissions we discussed earlier, but with simpler grading, scheduling, and assignments.
+
+Key Adjustments for Elementary Level
+
+Simplified Grade Structure
+
+Instead of Prelim, Midterm, Final — use Quarter 1, Quarter 2, Quarter 3, Quarter 4.
+
+Subjects
+
+Standard elementary subjects: Math, English, Science, Filipino, Araling Panlipunan, MAPEH, EPP/TLE.
+
+Assignments/Quizzes
+
+Mostly short quizzes, projects, and reading tasks.
+
+Announcements
+
+More parent-focused communication (e.g., school events, reminders, PTA meetings).
+
+UI
+
+Larger buttons, bright colors, minimal text for student portal.
+
+Updated Database Schema (MySQL)
+-- Users Table
+CREATE TABLE users (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  role ENUM('academic_coordinator', 'principal', 'teacher', 'student', 'parent') NOT NULL
+);
+
+-- Sections Table
+CREATE TABLE sections (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  grade_level ENUM('Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6') NOT NULL,
+  adviser_id INT,
+  FOREIGN KEY (adviser_id) REFERENCES users(id)
+);
+
+-- Subjects Table
+CREATE TABLE subjects (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  grade_level ENUM('Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6') NOT NULL,
+  teacher_id INT,
+  section_id INT,
+  schedule VARCHAR(255),
+  FOREIGN KEY (teacher_id) REFERENCES users(id),
+  FOREIGN KEY (section_id) REFERENCES sections(id)
+);
+
+-- Assignments Table
+CREATE TABLE assignments (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  due_date DATE,
+  section_id INT,
+  created_by INT,
+  FOREIGN KEY (section_id) REFERENCES sections(id),
+  FOREIGN KEY (created_by) REFERENCES users(id)
+);
+
+-- Grades Table (4 quarters for elementary)
+CREATE TABLE grades (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  student_id INT,
+  subject_id INT,
+  quarter1 INT,
+  quarter2 INT,
+  quarter3 INT,
+  quarter4 INT,
+  FOREIGN KEY (student_id) REFERENCES users(id),
+  FOREIGN KEY (subject_id) REFERENCES subjects(id)
+);
+
+-- Announcements Table
+CREATE TABLE announcements (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  title VARCHAR(255) NOT NULL,
+  message TEXT,
+  section_id INT,
+  created_by INT,
+  date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (section_id) REFERENCES sections(id),
+  FOREIGN KEY (created_by) REFERENCES users(id)
+);
+
+Role Permissions (Elementary)
+
+Academic Coordinator
+
+Create sections & assign grade levels
+
+Assign teachers & subjects
+
+Create school-wide schedule
+
+Principal
+
+View all students’ performance
+
+Monitor teacher activities
+
+Post school-wide announcements
+
+Teacher
+
+Encode grades (quarterly)
+
+Create assignments/quizzes
+
+Upload learning materials
+
+Send announcements to parents/students
+
+Student
+
+View assignments/quizzes
+
+Submit work
+
+View grades per quarter
+
+Parent (optional extra role)
+
+View child’s grades & announcements
+
+React + Node.js Flow
+
+Login Page → User logs in, JWT issued
+
+Role-based Dashboard:
+
+If teacher → Assignments, Grade Encoding, Announcements
+
+If student → Assignments, Learning Materials, My Grades
+
+If principal → Reports, Monitoring
+
+If academic coordinator → Subject & Section Management

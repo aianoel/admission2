@@ -8,7 +8,6 @@ import { Card, CardContent } from '../ui/card';
 import { useToast } from '../../hooks/use-toast';
 import { apiRequest } from '../../lib/queryClient';
 // Firebase enrollment replaced with PostgreSQL placeholder
-import { EnrollmentApplication } from '@shared/schema';
 
 interface EnrollmentPortalProps {
   onBackToLogin: () => void;
