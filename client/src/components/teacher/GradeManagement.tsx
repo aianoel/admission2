@@ -280,7 +280,7 @@ export function GradeManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   {sections.map((section) => (
-                    <SelectItem key={section.id} value={section.id.toString()}>
+                    <SelectItem key={section.id} value={section.id?.toString() || ""}>
                       {section.name} (Grade {section.gradeLevel})
                     </SelectItem>
                   ))}

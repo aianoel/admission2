@@ -1367,10 +1367,10 @@ export class DatabaseStorage implements IStorage {
   async getDatabaseStats(): Promise<any> {
     try {
       // Table row counts
-      const [userCount] = await db.execute(sql`SELECT COUNT(*) as count FROM users`);
-      const [enrollmentCount] = await db.execute(sql`SELECT COUNT(*) as count FROM enrollments`);
-      const [sectionCount] = await db.execute(sql`SELECT COUNT(*) as count FROM sections`);
-      const [gradeCount] = await db.execute(sql`SELECT COUNT(*) as count FROM grades`);
+      const userCount = await db.execute(sql`SELECT COUNT(*) as count FROM users`);
+      const enrollmentCount = await db.execute(sql`SELECT COUNT(*) as count FROM enrollments`);
+      const sectionCount = await db.execute(sql`SELECT COUNT(*) as count FROM sections`);
+      const gradeCount = await db.execute(sql`SELECT COUNT(*) as count FROM grades`);
       
       return {
         tableRowCounts: {
