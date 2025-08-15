@@ -18,6 +18,8 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   profileImage: text("profile_image"),
+  isActive: boolean("is_active").default(true),
+  status: text("status").default("active"), // active, inactive, suspended
   createdAt: timestamp("created_at").defaultNow(),
   lastLogin: timestamp("last_login"),
 });

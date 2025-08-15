@@ -18,6 +18,17 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
+// Add session extension
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+    user?: {
+      id: number;
+      role: string;
+    };
+  }
+}
+
 // SMS Service using Semaphore API
 class SMSService {
   private apiKey = "ad7e27a483935c25d4960577a031a52e";
@@ -134,11 +145,11 @@ export function registerRoutes(app: Express): Server {
 
       const responseUser = {
         id: user.id,
-        name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
         email: user.email,
         role: roleName,
         roleId: user.roleId,
-        isActive: true,
+        isActive: user.isActive ?? true,
         createdAt: user.createdAt
       };
 
@@ -1139,7 +1150,7 @@ export function registerRoutes(app: Express): Server {
       const users = await storage.getAllUsers();
       const students = users.filter(user => user.roleId === 5).map(user => ({
         id: user.id,
-        name: user.name || `User ${user.id}`,
+        name: `${user.firstName} ${user.lastName}`,
         email: user.email,
         section: "Not Assigned"
       }));
@@ -1168,7 +1179,7 @@ export function registerRoutes(app: Express): Server {
       const users = await storage.getAllUsers();
       const students = users.filter(user => user.roleId === 5).map(user => ({
         id: user.id,
-        name: user.name || `User ${user.id}`,
+        name: `${user.firstName} ${user.lastName}`,
         email: user.email
       }));
       res.json(students);
@@ -1210,7 +1221,7 @@ export function registerRoutes(app: Express): Server {
       const users = await storage.getAllUsers();
       const students = users.filter(user => user.roleId === 5).map(user => ({
         id: user.id,
-        name: user.name || `User ${user.id}`,
+        name: `${user.firstName} ${user.lastName}`,
         email: user.email
       }));
       res.json(students);
@@ -1226,10 +1237,10 @@ export function registerRoutes(app: Express): Server {
       const users = await storage.getAllUsers();
       const formattedUsers = users.map(user => ({
         id: user.id,
-        name: user.name || `User ${user.id}`,
+        name: `${user.firstName} ${user.lastName}`,
         email: user.email,
-        role: user.roleId,
-        isActive: user.isActive,
+        roleId: user.roleId,
+        isActive: user.isActive ?? true,
         createdAt: user.createdAt
       }));
       res.json(formattedUsers);
@@ -1277,19 +1288,21 @@ export function registerRoutes(app: Express): Server {
       const newUser = await storage.createUser({
         firstName,
         lastName,
-        name: `${firstName} ${lastName}`,
         roleId,
         email,
         passwordHash: hashedPassword,
-        role: role, // Add role for compatibility
+        isActive: true,
+        status: "active"
       });
 
       const responseUser = {
         id: newUser.id,
-        name: newUser.name || `${newUser.firstName} ${newUser.lastName}`,
+        name: `${newUser.firstName} ${newUser.lastName}`,
         email: newUser.email,
-        role: newUser.roleId,
-        isActive: newUser.isActive,
+        role,
+        roleId: newUser.roleId,
+        isActive: newUser.isActive ?? true,
+        status: newUser.status ?? "active",
         createdAt: newUser.createdAt
       };
 
@@ -1306,10 +1319,11 @@ export function registerRoutes(app: Express): Server {
       const users = await storage.getAllUsers();
       const safeUsers = users.map(user => ({
         id: user.id,
-        name: user.name || `User ${user.id}`,
+        name: `${user.firstName} ${user.lastName}`,
         email: user.email,
-        role: user.role || 'user',
-        isActive: user.isActive
+        roleId: user.roleId,
+        isActive: user.isActive ?? true,
+        status: user.status ?? "active"
       }));
       res.json(safeUsers);
     } catch (error) {
