@@ -1244,6 +1244,16 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.get("/api/admin/system-stats", async (req, res) => {
+    try {
+      const systemStats = await storage.getSystemStats();
+      res.json(systemStats);
+    } catch (error) {
+      console.error("Error fetching system stats:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Admin API endpoints
   app.get("/api/admin/roles", async (req, res) => {
     try {
