@@ -1,30 +1,32 @@
 -- ===============================
--- School Management System - Hostinger Production Database Schema
+-- School Management System - Hostinger MySQL Database Schema
 -- ===============================
 
 -- Drop existing tables if they exist (be careful in production!)
--- DROP TABLE IF EXISTS task_submissions CASCADE;
--- DROP TABLE IF EXISTS teacher_tasks CASCADE;
--- DROP TABLE IF EXISTS teacher_meetings CASCADE;
--- DROP TABLE IF EXISTS grades CASCADE;
--- DROP TABLE IF EXISTS enrollments CASCADE;
--- DROP TABLE IF EXISTS sections CASCADE;
--- DROP TABLE IF EXISTS users CASCADE;
--- DROP TABLE IF EXISTS roles CASCADE;
--- DROP TABLE IF EXISTS subjects CASCADE;
--- DROP TABLE IF EXISTS announcements CASCADE;
--- DROP TABLE IF EXISTS org_chart CASCADE;
--- DROP TABLE IF EXISTS tuition_fees CASCADE;
--- DROP TABLE IF EXISTS school_settings CASCADE;
--- DROP TABLE IF EXISTS teacher_assignments CASCADE;
--- DROP TABLE IF EXISTS chat_conversations CASCADE;
--- DROP TABLE IF EXISTS chat_messages CASCADE;
+-- SET FOREIGN_KEY_CHECKS = 0;
+-- DROP TABLE IF EXISTS task_submissions;
+-- DROP TABLE IF EXISTS teacher_tasks;
+-- DROP TABLE IF EXISTS teacher_meetings;
+-- DROP TABLE IF EXISTS grades;
+-- DROP TABLE IF EXISTS enrollments;
+-- DROP TABLE IF EXISTS sections;
+-- DROP TABLE IF EXISTS users;
+-- DROP TABLE IF EXISTS roles;
+-- DROP TABLE IF EXISTS subjects;
+-- DROP TABLE IF EXISTS announcements;
+-- DROP TABLE IF EXISTS org_chart;
+-- DROP TABLE IF EXISTS tuition_fees;
+-- DROP TABLE IF EXISTS school_settings;
+-- DROP TABLE IF EXISTS teacher_assignments;
+-- DROP TABLE IF EXISTS chat_conversations;
+-- DROP TABLE IF EXISTS chat_messages;
+-- SET FOREIGN_KEY_CHECKS = 1;
 
 -- ===============================
 -- 1. Roles Table
 -- ===============================
 CREATE TABLE roles (
-    id SERIAL PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     role_name VARCHAR(50) UNIQUE NOT NULL
 );
 
@@ -44,43 +46,45 @@ INSERT INTO roles (role_name) VALUES
 -- 2. Users Table
 -- ===============================
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL,
-    role_id INTEGER REFERENCES roles(id),
+    role_id INT,
     is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
 -- ===============================
 -- 3. Sections Table
 -- ===============================
 CREATE TABLE sections (
-    id SERIAL PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    grade_level INTEGER NOT NULL,
-    adviser_id INTEGER
+    grade_level INT NOT NULL,
+    adviser_id INT
 );
 
 -- ===============================
 -- 4. Subjects Table
 -- ===============================
 CREATE TABLE subjects (
-    id SERIAL PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT,
-    section_id INTEGER REFERENCES sections(id)
+    section_id INT,
+    FOREIGN KEY (section_id) REFERENCES sections(id)
 );
 
 -- ===============================
 -- 5. Enrollments Table
 -- ===============================
 CREATE TABLE enrollments (
-    id SERIAL PRIMARY KEY,
-    student_id INTEGER NOT NULL,
-    section_id INTEGER,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    section_id INT,
     status VARCHAR(20) DEFAULT 'pending',
     documents TEXT,
     payment_status VARCHAR(20) DEFAULT 'unpaid',
@@ -91,110 +95,121 @@ CREATE TABLE enrollments (
 -- 6. Grades Table
 -- ===============================
 CREATE TABLE grades (
-    id SERIAL PRIMARY KEY,
-    student_id INTEGER NOT NULL,
-    subject_id INTEGER REFERENCES subjects(id),
-    quarter INTEGER NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    subject_id INT,
+    quarter INT NOT NULL,
     grade DECIMAL(5,2),
-    teacher_id INTEGER
+    teacher_id INT,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id)
 );
 
 -- ===============================
 -- 7. Teacher Tasks Table
 -- ===============================
 CREATE TABLE teacher_tasks (
-    id SERIAL PRIMARY KEY,
-    teacher_id INTEGER NOT NULL REFERENCES users(id),
-    section_id INTEGER NOT NULL REFERENCES sections(id),
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    teacher_id INT NOT NULL,
+    section_id INT NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     task_type VARCHAR(50) NOT NULL,
-    timer_minutes INTEGER,
-    due_date TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    timer_minutes INT,
+    due_date TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (teacher_id) REFERENCES users(id),
+    FOREIGN KEY (section_id) REFERENCES sections(id)
 );
 
 -- ===============================
 -- 8. Task Submissions Table
 -- ===============================
 CREATE TABLE task_submissions (
-    id SERIAL PRIMARY KEY,
-    task_id INTEGER NOT NULL REFERENCES teacher_tasks(id),
-    student_id INTEGER NOT NULL REFERENCES users(id),
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    task_id INT NOT NULL,
+    student_id INT NOT NULL,
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     file_url TEXT,
     score DECIMAL(5,2),
-    feedback TEXT
+    feedback TEXT,
+    FOREIGN KEY (task_id) REFERENCES teacher_tasks(id),
+    FOREIGN KEY (student_id) REFERENCES users(id)
 );
 
 -- ===============================
 -- 9. Teacher Meetings Table
 -- ===============================
 CREATE TABLE teacher_meetings (
-    id SERIAL PRIMARY KEY,
-    teacher_id INTEGER NOT NULL REFERENCES users(id),
-    section_id INTEGER NOT NULL REFERENCES sections(id),
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    teacher_id INT NOT NULL,
+    section_id INT NOT NULL,
     title VARCHAR(255) NOT NULL,
     meeting_url TEXT NOT NULL,
     scheduled_at TIMESTAMP NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (teacher_id) REFERENCES users(id),
+    FOREIGN KEY (section_id) REFERENCES sections(id)
 );
 
 -- ===============================
 -- 10. Teacher Assignments Table
 -- ===============================
 CREATE TABLE teacher_assignments (
-    id SERIAL PRIMARY KEY,
-    teacher_id INTEGER REFERENCES users(id),
-    subject_id INTEGER REFERENCES subjects(id),
-    section_id INTEGER REFERENCES sections(id),
-    school_year VARCHAR(20) DEFAULT '2024-2025'
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    teacher_id INT,
+    subject_id INT,
+    section_id INT,
+    school_year VARCHAR(20) DEFAULT '2024-2025',
+    FOREIGN KEY (teacher_id) REFERENCES users(id),
+    FOREIGN KEY (subject_id) REFERENCES subjects(id),
+    FOREIGN KEY (section_id) REFERENCES sections(id)
 );
 
 -- ===============================
 -- 11. Announcements Table
 -- ===============================
 CREATE TABLE announcements (
-    id SERIAL PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
-    author_id INTEGER REFERENCES users(id),
+    author_id INT,
     target_audience VARCHAR(100) DEFAULT 'all',
     priority VARCHAR(20) DEFAULT 'normal',
     date_posted TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_active BOOLEAN DEFAULT true
+    is_active BOOLEAN DEFAULT true,
+    FOREIGN KEY (author_id) REFERENCES users(id)
 );
 
 -- ===============================
 -- 12. Organization Chart Table
 -- ===============================
 CREATE TABLE org_chart (
-    id SERIAL PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     position VARCHAR(255) NOT NULL,
     photo_url TEXT,
-    reports_to INTEGER
+    reports_to INT
 );
 
 -- ===============================
 -- 13. School Settings Table
 -- ===============================
 CREATE TABLE school_settings (
-    id SERIAL PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     primary_color VARCHAR(7) DEFAULT '#3b82f6',
     school_name VARCHAR(255) DEFAULT 'School Management System',
     school_year VARCHAR(20) DEFAULT '2024-2025',
     start_date DATE,
     end_date DATE,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- ===============================
 -- 14. Tuition Fees Table
 -- ===============================
 CREATE TABLE tuition_fees (
-    id SERIAL PRIMARY KEY,
-    grade_level INTEGER NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    grade_level INT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     due_date DATE,
     school_year VARCHAR(20) DEFAULT '2024-2025',
@@ -207,21 +222,23 @@ CREATE TABLE tuition_fees (
 CREATE TABLE chat_conversations (
     id VARCHAR(255) PRIMARY KEY,
     conversation_type VARCHAR(50) NOT NULL,
-    participants INTEGER[] NOT NULL,
+    participants JSON NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- ===============================
 -- 16. Chat Messages Table
 -- ===============================
 CREATE TABLE chat_messages (
-    id SERIAL PRIMARY KEY,
-    conversation_id VARCHAR(255) REFERENCES chat_conversations(id),
-    sender_id INTEGER REFERENCES users(id),
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    conversation_id VARCHAR(255),
+    sender_id INT,
     content TEXT NOT NULL,
     message_type VARCHAR(50) DEFAULT 'text',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id),
+    FOREIGN KEY (sender_id) REFERENCES users(id)
 );
 
 -- ===============================
