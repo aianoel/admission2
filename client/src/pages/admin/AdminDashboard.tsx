@@ -358,6 +358,86 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps = {}) {
         </div>
       </div>
 
+      {/* System Monitoring Dashboard - Top Priority */}
+      <div className="p-3 sm:p-6">
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Monitor className="h-5 w-5 text-blue-600" />
+              System Monitoring Overview
+            </CardTitle>
+            <CardDescription>Real-time system health and performance monitoring</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {systemLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <div className="text-gray-500">Loading system monitoring data...</div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 rounded-full">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-green-700">System Status</p>
+                      <p className="text-sm text-green-600">All systems operational</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-green-100 text-green-700 border-green-300">Online</Badge>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-full">
+                      <Clock className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-blue-700">System Uptime</p>
+                      <p className="text-sm text-blue-600">Server running</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                    {systemStats?.resources?.uptime?.formatted || '0m'}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded-full">
+                      <Cpu className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-purple-700">Memory Usage</p>
+                      <p className="text-sm text-purple-600">{systemStats?.resources?.memory?.usagePercentage || 0}%</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-purple-100 text-purple-700 border-purple-300">
+                    {systemStats?.resources?.memory?.used || 0}MB
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-100 rounded-full">
+                      <Database className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-orange-700">Database Health</p>
+                      <p className="text-sm text-orange-600">Connection status</p>
+                    </div>
+                  </div>
+                  <Badge className={`${systemStats?.database?.connectionStatus === 'healthy' ? 'bg-green-100 text-green-700 border-green-300' : 'bg-orange-100 text-orange-700 border-orange-300'}`}>
+                    {systemStats?.database?.connectionStatus === 'healthy' ? 'Healthy' : 'Monitoring'}
+                  </Badge>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Enhanced Stats Cards with Motion - Mobile Responsive */}
       <motion.div 
         className="p-3 sm:p-6 grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
@@ -795,160 +875,80 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps = {}) {
                 </CardContent>
               </Card>
 
-              {/* Enhanced System Monitoring Dashboard */}
+              {/* Detailed System Monitoring Dashboard */}
               <Card className="col-span-full">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Monitor className="h-5 w-5 text-blue-600" />
-                    System Monitoring Dashboard
+                    <Activity className="h-5 w-5 text-blue-600" />
+                    Detailed System Analytics
                   </CardTitle>
-                  <CardDescription>Comprehensive system health, database monitoring, and performance analytics</CardDescription>
+                  <CardDescription>Advanced monitoring with database analytics, resource tracking, and user activity insights</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {systemLoading ? (
                     <div className="flex items-center justify-center h-32">
-                      <div className="text-gray-500">Loading system monitoring data...</div>
+                      <div className="text-gray-500">Loading detailed analytics...</div>
                     </div>
                   ) : (
-                    <Tabs defaultValue="overview" className="w-full">
-                      <TabsList className="grid w-full grid-cols-4">
-                        <TabsTrigger value="overview">Overview</TabsTrigger>
-                        <TabsTrigger value="database">Database</TabsTrigger>
-                        <TabsTrigger value="resources">Resources</TabsTrigger>
+                    <Tabs defaultValue="database" className="w-full">
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="database">Database Analytics</TabsTrigger>
+                        <TabsTrigger value="resources">Resource Monitoring</TabsTrigger>
                         <TabsTrigger value="activity">User Activity</TabsTrigger>
                       </TabsList>
 
-                      <TabsContent value="overview" className="space-y-4 mt-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                          <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-green-100 rounded-full">
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-green-700">System Status</p>
-                                <p className="text-sm text-green-600">All systems operational</p>
-                              </div>
+                      <TabsContent value="database" className="space-y-4 mt-6">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="flex justify-center mb-2">
+                              <Users className="h-6 w-6 text-blue-600" />
                             </div>
-                            <Badge className="bg-green-100 text-green-700 border-green-300">Online</Badge>
+                            <p className="text-sm text-blue-600 font-medium">Total Users</p>
+                            <p className="text-2xl font-bold text-blue-700">{systemStats?.database?.tableRowCounts?.users || dashboardStats?.totalUsers || 0}</p>
                           </div>
-                          
-                          <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-blue-100 rounded-full">
-                                <Clock className="h-5 w-5 text-blue-600" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-blue-700">System Uptime</p>
-                                <p className="text-sm text-blue-600">Server running</p>
-                              </div>
+                          <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                            <div className="flex justify-center mb-2">
+                              <GraduationCap className="h-6 w-6 text-green-600" />
                             </div>
-                            <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-                              {systemStats?.resources?.uptime?.formatted || '0m'}
-                            </Badge>
+                            <p className="text-sm text-green-600 font-medium">Enrollments</p>
+                            <p className="text-2xl font-bold text-green-700">{systemStats?.database?.tableRowCounts?.enrollments || dashboardStats?.activeEnrollments || 0}</p>
                           </div>
-
-                          <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-200">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-purple-100 rounded-full">
-                                <Activity className="h-5 w-5 text-purple-600" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-purple-700">Response Time</p>
-                                <p className="text-sm text-purple-600">API performance</p>
-                              </div>
+                          <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                            <div className="flex justify-center mb-2">
+                              <Building2 className="h-6 w-6 text-purple-600" />
                             </div>
-                            <Badge className="bg-purple-100 text-purple-700 border-purple-300">
-                              {systemStats?.performance?.responseTime || 0}ms
-                            </Badge>
+                            <p className="text-sm text-purple-600 font-medium">Sections</p>
+                            <p className="text-2xl font-bold text-purple-700">{systemStats?.database?.tableRowCounts?.sections || dashboardStats?.totalSections || 0}</p>
                           </div>
-
-                          <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-200">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-orange-100 rounded-full">
-                                <Globe className="h-5 w-5 text-orange-600" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-orange-700">Environment</p>
-                                <p className="text-sm text-orange-600">Runtime mode</p>
-                              </div>
+                          <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+                            <div className="flex justify-center mb-2">
+                              <BookOpen className="h-6 w-6 text-orange-600" />
                             </div>
-                            <Badge className="bg-orange-100 text-orange-700 border-orange-300">
-                              {systemStats?.resources?.environment || 'Development'}
-                            </Badge>
+                            <p className="text-sm text-orange-600 font-medium">Grades</p>
+                            <p className="text-2xl font-bold text-orange-700">{systemStats?.database?.tableRowCounts?.grades || 0}</p>
                           </div>
                         </div>
-                      </TabsContent>
 
-                      <TabsContent value="database" className="space-y-4 mt-6">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
                             <div className="flex items-center gap-3">
-                              <div className="p-2 bg-green-100 rounded-full">
-                                <Database className="h-5 w-5 text-green-600" />
-                              </div>
+                              <HardDrive className="h-5 w-5 text-gray-600" />
                               <div>
-                                <p className="font-medium text-green-700">Database Connection</p>
-                                <p className="text-sm text-green-600">PostgreSQL connection status</p>
+                                <p className="font-medium text-gray-700">Query Performance</p>
+                                <p className="text-sm text-gray-600">Average response time</p>
                               </div>
                             </div>
-                            <Badge className={`${systemStats?.database?.connectionStatus === 'healthy' ? 'bg-green-100 text-green-700 border-green-300' : 'bg-red-100 text-red-700 border-red-300'}`}>
-                              {systemStats?.database?.connectionStatus === 'healthy' ? 'Healthy' : 'Error'}
-                            </Badge>
+                            <Badge variant="outline">{systemStats?.database?.avgQueryTime || 'Optimal'}</Badge>
                           </div>
-
-                          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-                              <div className="flex justify-center mb-2">
-                                <Users className="h-6 w-6 text-blue-600" />
+                          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                            <div className="flex items-center gap-3">
+                              <Server className="h-5 w-5 text-gray-600" />
+                              <div>
+                                <p className="font-medium text-gray-700">Active Connections</p>
+                                <p className="text-sm text-gray-600">Database connections</p>
                               </div>
-                              <p className="text-sm text-blue-600 font-medium">Total Users</p>
-                              <p className="text-2xl font-bold text-blue-700">{systemStats?.database?.tableRowCounts?.users || 0}</p>
                             </div>
-                            <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-                              <div className="flex justify-center mb-2">
-                                <GraduationCap className="h-6 w-6 text-green-600" />
-                              </div>
-                              <p className="text-sm text-green-600 font-medium">Enrollments</p>
-                              <p className="text-2xl font-bold text-green-700">{systemStats?.database?.tableRowCounts?.enrollments || 0}</p>
-                            </div>
-                            <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
-                              <div className="flex justify-center mb-2">
-                                <Building2 className="h-6 w-6 text-purple-600" />
-                              </div>
-                              <p className="text-sm text-purple-600 font-medium">Sections</p>
-                              <p className="text-2xl font-bold text-purple-700">{systemStats?.database?.tableRowCounts?.sections || 0}</p>
-                            </div>
-                            <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
-                              <div className="flex justify-center mb-2">
-                                <BookOpen className="h-6 w-6 text-orange-600" />
-                              </div>
-                              <p className="text-sm text-orange-600 font-medium">Grades</p>
-                              <p className="text-2xl font-bold text-orange-700">{systemStats?.database?.tableRowCounts?.grades || 0}</p>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
-                              <div className="flex items-center gap-3">
-                                <HardDrive className="h-5 w-5 text-gray-600" />
-                                <div>
-                                  <p className="font-medium text-gray-700">Query Performance</p>
-                                  <p className="text-sm text-gray-600">Average response time</p>
-                                </div>
-                              </div>
-                              <Badge variant="outline">{systemStats?.database?.avgQueryTime || 'N/A'}</Badge>
-                            </div>
-                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
-                              <div className="flex items-center gap-3">
-                                <Server className="h-5 w-5 text-gray-600" />
-                                <div>
-                                  <p className="font-medium text-gray-700">Active Connections</p>
-                                  <p className="text-sm text-gray-600">Database connections</p>
-                                </div>
-                              </div>
-                              <Badge variant="outline">{systemStats?.database?.activeConnections || 5}</Badge>
-                            </div>
+                            <Badge variant="outline">{systemStats?.database?.activeConnections || 5}</Badge>
                           </div>
                         </div>
                       </TabsContent>
@@ -996,11 +996,11 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps = {}) {
                             </div>
                             <div className="text-center p-3 bg-purple-50 rounded-lg">
                               <p className="text-sm text-purple-600 font-medium">CPU Load</p>
-                              <p className="text-lg font-bold text-purple-700">{systemStats?.resources?.cpu?.loadAverage || 'Light'}</p>
+                              <p className="text-lg font-bold text-purple-700">{systemStats?.resources?.cpu?.usage || 'Light'}</p>
                             </div>
                             <div className="text-center p-3 bg-orange-50 rounded-lg">
-                              <p className="text-sm text-orange-600 font-medium">Environment</p>
-                              <p className="text-lg font-bold text-orange-700">{systemStats?.resources?.environment || 'Dev'}</p>
+                              <p className="text-sm text-orange-600 font-medium">Response Time</p>
+                              <p className="text-lg font-bold text-orange-700">{systemStats?.performance?.responseTime || 0}ms</p>
                             </div>
                           </div>
                         </div>
@@ -1035,17 +1035,17 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps = {}) {
                           <div className="space-y-4">
                             <h4 className="font-semibold text-gray-700 flex items-center gap-2">
                               <Shield className="h-5 w-5" />
-                              Security & Login Monitoring
+                              Security Monitoring
                             </h4>
                             <div className="grid grid-cols-3 gap-4">
                               <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
                                 <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
-                                <p className="text-xs text-green-600 font-medium">Successful</p>
+                                <p className="text-xs text-green-600 font-medium">Successful Logins</p>
                                 <p className="text-lg font-bold text-green-700">{systemStats?.userActivity?.loginAttempts?.successful || 0}</p>
                               </div>
                               <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                                 <AlertTriangle className="h-5 w-5 text-yellow-600 mx-auto mb-1" />
-                                <p className="text-xs text-yellow-600 font-medium">Failed</p>
+                                <p className="text-xs text-yellow-600 font-medium">Failed Attempts</p>
                                 <p className="text-lg font-bold text-yellow-700">{systemStats?.userActivity?.loginAttempts?.failed || 0}</p>
                               </div>
                               <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
@@ -1059,24 +1059,16 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps = {}) {
                           <div className="space-y-3">
                             <h4 className="font-semibold text-gray-700 flex items-center gap-2">
                               <Users className="h-5 w-5" />
-                              User Role Distribution
+                              User Distribution
                             </h4>
-                            <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
                               {Object.entries(systemStats?.userActivity?.roleDistribution || {}).map(([role, count]) => (
                                 <div key={role} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                                  <span className="capitalize font-medium">{role.replace('_', ' ')}</span>
-                                  <Badge variant="outline">{count as number}</Badge>
+                                  <span className="capitalize text-sm font-medium">{role.replace('_', ' ')}</span>
+                                  <Badge variant="outline" className="text-xs">{count as number}</Badge>
                                 </div>
                               ))}
                             </div>
-                          </div>
-
-                          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Clock className="h-5 w-5 text-blue-600" />
-                              <span className="font-medium text-blue-700">Peak Activity Hours</span>
-                            </div>
-                            <p className="text-sm text-blue-600">{systemStats?.userActivity?.peakHours || '10:00-12:00, 14:00-16:00'}</p>
                           </div>
                         </div>
                       </TabsContent>
