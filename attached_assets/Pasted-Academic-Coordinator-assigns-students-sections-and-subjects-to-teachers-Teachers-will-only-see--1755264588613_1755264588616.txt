@@ -1,0 +1,166 @@
+Academic Coordinator assigns students, sections, and subjects to teachers.
+
+Teachers will only see:
+
+Students assigned to them
+
+Sections assigned to them
+
+Subjects assigned to them
+
+Their advisory section (if applicable)
+
+This is for elementary students.
+
+Here’s how I’ll break it down:
+
+Database Structure (SQL)
+
+We’ll use MySQL (works the same for MariaDB).
+
+-- Teachers table
+CREATE TABLE teachers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL
+);
+
+-- Sections table
+CREATE TABLE sections (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    grade_level VARCHAR(50) NOT NULL
+);
+
+-- Subjects table
+CREATE TABLE subjects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    grade_level VARCHAR(50) NOT NULL
+);
+
+-- Students table
+CREATE TABLE students (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    section_id INT,
+    FOREIGN KEY (section_id) REFERENCES sections(id)
+);
+
+-- Assignments table (Academic Coordinator assigns these)
+CREATE TABLE teacher_assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    teacher_id INT,
+    section_id INT,
+    subject_id INT,
+    is_advisory BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (teacher_id) REFERENCES teachers(id),
+    FOREIGN KEY (section_id) REFERENCES sections(id),
+    FOREIGN KEY (subject_id) REFERENCES subjects(id)
+);
+
+Backend API (Node.js + Express + MySQL)
+// Get teacher's assigned students, sections, and subjects
+app.get("/api/teacher-dashboard/:teacherId", async (req, res) => {
+    const { teacherId } = req.params;
+
+    try {
+        const [sections] = await db.query(
+            `SELECT DISTINCT s.id, s.name, s.grade_level
+             FROM teacher_assignments ta
+             JOIN sections s ON ta.section_id = s.id
+             WHERE ta.teacher_id = ?`,
+            [teacherId]
+        );
+
+        const [subjects] = await db.query(
+            `SELECT DISTINCT sub.id, sub.name, sub.grade_level
+             FROM teacher_assignments ta
+             JOIN subjects sub ON ta.subject_id = sub.id
+             WHERE ta.teacher_id = ?`,
+            [teacherId]
+        );
+
+        const [students] = await db.query(
+            `SELECT DISTINCT st.id, st.name, st.section_id
+             FROM teacher_assignments ta
+             JOIN students st ON ta.section_id = st.section_id
+             WHERE ta.teacher_id = ?`,
+            [teacherId]
+        );
+
+        const [advisory] = await db.query(
+            `SELECT s.id, s.name
+             FROM teacher_assignments ta
+             JOIN sections s ON ta.section_id = s.id
+             WHERE ta.teacher_id = ? AND ta.is_advisory = TRUE`,
+            [teacherId]
+        );
+
+        res.json({ sections, subjects, students, advisory });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Database error" });
+    }
+});
+
+React (Teacher Dashboard)
+
+Example fetching teacher-specific data:
+
+import { useEffect, useState } from "react";
+import axios from "axios";
+
+export default function TeacherDashboard({ teacherId }) {
+    const [data, setData] = useState({ sections: [], subjects: [], students: [], advisory: [] });
+
+    useEffect(() => {
+        axios.get(`/api/teacher-dashboard/${teacherId}`).then((res) => {
+            setData(res.data);
+        });
+    }, [teacherId]);
+
+    return (
+        <div>
+            <h2>Teacher Dashboard</h2>
+            
+            <h3>Advisory Section</h3>
+            {data.advisory.length > 0 ? (
+                <p>{data.advisory[0].name}</p>
+            ) : (
+                <p>No advisory assigned</p>
+            )}
+
+            <h3>Sections</h3>
+            <ul>
+                {data.sections.map((sec) => (
+                    <li key={sec.id}>{sec.name} - {sec.grade_level}</li>
+                ))}
+            </ul>
+
+            <h3>Subjects</h3>
+            <ul>
+                {data.subjects.map((sub) => (
+                    <li key={sub.id}>{sub.name}</li>
+                ))}
+            </ul>
+
+            <h3>Students</h3>
+            <ul>
+                {data.students.map((stu) => (
+                    <li key={stu.id}>{stu.name}</li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+
+✅ Flow
+
+Academic Coordinator assigns teacher → section → subject in teacher_assignments table.
+
+Teacher logs in → React calls /api/teacher-dashboard/:teacherId.
+
+API returns only their assigned data (students, sections, subjects, advisory).

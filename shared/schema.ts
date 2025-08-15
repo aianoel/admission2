@@ -34,14 +34,15 @@ export const enrollments = pgTable('enrollments', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
-// Grades table
+// Grades table - Fixed with proper subject reference
 export const grades = pgTable('grades', {
   id: serial('id').primaryKey(),
   studentId: integer('student_id').notNull(),
-  subject: varchar('subject', { length: 100 }).notNull(),
+  subjectId: integer('subject_id').notNull().references(() => subjects.id),
   quarter: integer('quarter').notNull(),
   grade: decimal('grade', { precision: 5, scale: 2 }),
-  teacherId: integer('teacher_id'),
+  teacherId: integer('teacher_id').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
 // Teacher Tasks (Enhanced Assignments)
@@ -391,12 +392,16 @@ export const subjects = pgTable('subjects', {
   gradeLevel: integer('grade_level').notNull(),
 });
 
-// Teacher assignments table
+// Teacher assignments table - Enhanced for Academic Coordinator
 export const teacherAssignments = pgTable('teacher_assignments', {
   id: serial('id').primaryKey(),
   teacherId: integer('teacher_id').references(() => users.id),
   sectionId: integer('section_id').references(() => sections.id),
   subjectId: integer('subject_id').references(() => subjects.id),
+  isAdvisory: boolean('is_advisory').default(false),
+  schoolYear: varchar('school_year', { length: 9 }).default('2024-2025'),
+  assignedBy: integer('assigned_by').references(() => users.id), // Academic Coordinator
+  assignedAt: timestamp('assigned_at').defaultNow(),
 });
 
 // Organizational chart table

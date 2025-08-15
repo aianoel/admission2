@@ -654,6 +654,153 @@ export class DatabaseStorage implements IStorage {
     await db.delete(teacherAssignments).where(eq(teacherAssignments.id, id));
   }
 
+  // Academic Coordinator specific methods for teacher assignment management
+  async getTeacherDashboardData(teacherId: number): Promise<any> {
+    try {
+      // Get sections assigned to teacher
+      const assignedSections = await db
+        .select({
+          id: sections.id,
+          name: sections.name,
+          gradeLevel: sections.gradeLevel,
+          isAdvisory: teacherAssignments.isAdvisory
+        })
+        .from(teacherAssignments)
+        .innerJoin(sections, eq(teacherAssignments.sectionId, sections.id))
+        .where(eq(teacherAssignments.teacherId, teacherId));
+
+      // Get subjects assigned to teacher
+      const assignedSubjects = await db
+        .select({
+          id: subjects.id,
+          name: subjects.name,
+          gradeLevel: subjects.gradeLevel
+        })
+        .from(teacherAssignments)
+        .innerJoin(subjects, eq(teacherAssignments.subjectId, subjects.id))
+        .where(eq(teacherAssignments.teacherId, teacherId));
+
+      // Get students from assigned sections
+      const assignedStudents = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          sectionId: enrollments.sectionId
+        })
+        .from(teacherAssignments)
+        .innerJoin(enrollments, eq(teacherAssignments.sectionId, enrollments.sectionId))
+        .innerJoin(users, eq(enrollments.studentId, users.id))
+        .where(eq(teacherAssignments.teacherId, teacherId));
+
+      // Get advisory section
+      const advisorySection = await db
+        .select({
+          id: sections.id,
+          name: sections.name,
+          gradeLevel: sections.gradeLevel
+        })
+        .from(teacherAssignments)
+        .innerJoin(sections, eq(teacherAssignments.sectionId, sections.id))
+        .where(and(
+          eq(teacherAssignments.teacherId, teacherId),
+          eq(teacherAssignments.isAdvisory, true)
+        ));
+
+      return {
+        sections: assignedSections,
+        subjects: assignedSubjects,
+        students: assignedStudents,
+        advisory: advisorySection
+      };
+    } catch (error) {
+      console.error('Error getting teacher dashboard data:', error);
+      return {
+        sections: [],
+        subjects: [],
+        students: [],
+        advisory: []
+      };
+    }
+  }
+
+  async assignTeacherToSection(teacherId: number, sectionId: number, subjectId: number, isAdvisory: boolean = false, assignedBy: number): Promise<TeacherAssignment> {
+    const assignment: InsertTeacherAssignment = {
+      teacherId,
+      sectionId,
+      subjectId,
+      isAdvisory,
+      assignedBy,
+      schoolYear: '2024-2025'
+    };
+    
+    const [created] = await db.insert(teacherAssignments).values(assignment).returning();
+    return created;
+  }
+
+  async getTeacherAssignmentsByCoordinator(coordinatorId: number): Promise<any[]> {
+    try {
+      const assignments = await db
+        .select({
+          id: teacherAssignments.id,
+          teacherId: teacherAssignments.teacherId,
+          teacherName: users.name,
+          sectionId: teacherAssignments.sectionId,
+          sectionName: sections.name,
+          gradeLevel: sections.gradeLevel,
+          subjectId: teacherAssignments.subjectId,
+          subjectName: subjects.name,
+          isAdvisory: teacherAssignments.isAdvisory,
+          schoolYear: teacherAssignments.schoolYear,
+          assignedAt: teacherAssignments.assignedAt
+        })
+        .from(teacherAssignments)
+        .innerJoin(users, eq(teacherAssignments.teacherId, users.id))
+        .innerJoin(sections, eq(teacherAssignments.sectionId, sections.id))
+        .innerJoin(subjects, eq(teacherAssignments.subjectId, subjects.id))
+        .where(eq(teacherAssignments.assignedBy, coordinatorId));
+
+      return assignments;
+    } catch (error) {
+      console.error('Error getting assignments by coordinator:', error);
+      return [];
+    }
+  }
+
+  async getTeachersWithAssignments(): Promise<any[]> {
+    try {
+      const teachersWithAssignments = await db
+        .select({
+          teacherId: users.id,
+          teacherName: users.name,
+          teacherEmail: users.email,
+          assignments: sql<any[]>`
+            json_agg(
+              json_build_object(
+                'id', ${teacherAssignments.id},
+                'sectionName', ${sections.name},
+                'gradeLevel', ${sections.gradeLevel},
+                'subjectName', ${subjects.name},
+                'isAdvisory', ${teacherAssignments.isAdvisory},
+                'schoolYear', ${teacherAssignments.schoolYear}
+              )
+            ) FILTER (WHERE ${teacherAssignments.id} IS NOT NULL)
+          `
+        })
+        .from(users)
+        .leftJoin(teacherAssignments, eq(users.id, teacherAssignments.teacherId))
+        .leftJoin(sections, eq(teacherAssignments.sectionId, sections.id))
+        .leftJoin(subjects, eq(teacherAssignments.subjectId, subjects.id))
+        .where(eq(users.role, 'teacher'))
+        .groupBy(users.id, users.name, users.email);
+
+      return teachersWithAssignments;
+    } catch (error) {
+      console.error('Error getting teachers with assignments:', error);
+      return [];
+    }
+  }
+
   // Org chart methods
   async getOrgChart(): Promise<OrgChart[]> {
     return await db.select().from(orgChart);

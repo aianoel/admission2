@@ -344,7 +344,7 @@ export function registerRoutes(app: Express): Server {
 
   // Teacher Grade Management Routes
 
-  // Teacher Assignments (sections and subjects assigned to teacher)
+  // Teacher Assignments (sections and subjects assigned to teacher) - Enhanced
   app.get("/api/teacher/assignments", async (req, res) => {
     try {
       // Check if user is authenticated
@@ -354,23 +354,22 @@ export function registerRoutes(app: Express): Server {
 
       console.log("Fetching assignments for teacher ID:", req.session.userId);
       
-      const result = await db.execute(sql`
-        SELECT 
-          ta.id,
-          ta.section_id,
-          ta.subject_id,
-          s.name as section_name,
-          s.grade_level,
-          sub.name as subject_name
-        FROM teacher_assignments ta
-        JOIN sections s ON ta.section_id = s.id
-        LEFT JOIN subjects sub ON ta.subject_id = sub.id
-        WHERE ta.teacher_id = ${req.session.userId}
-        ORDER BY s.name, sub.name
-      `);
+      // Use the new enhanced method that gets all teacher dashboard data
+      const dashboardData = await storage.getTeacherDashboardData(req.session.userId);
       
-      console.log("Teacher assignments result:", result.rows);
-      res.json(result.rows);
+      // Format for backward compatibility while providing enhanced data
+      const formattedAssignments = dashboardData.sections.map((section: any, index: number) => ({
+        id: section.id,
+        section_id: section.id,
+        section_name: section.name,
+        grade_level: section.gradeLevel,
+        subject_id: dashboardData.subjects[index]?.id || null,
+        subject_name: dashboardData.subjects[index]?.name || 'No Subject',
+        is_advisory: section.isAdvisory
+      }));
+      
+      console.log("Teacher assignments result:", formattedAssignments);
+      res.json(formattedAssignments);
     } catch (error) {
       console.error("Error fetching teacher assignments:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -964,6 +963,88 @@ export function registerRoutes(app: Express): Server {
       res.json(assignments);
     } catch (error) {
       console.error("Error fetching teacher assignments:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Enhanced Academic Coordinator Assignment Management
+  // Get teacher dashboard data (sections, subjects, students, advisory)
+  app.get("/api/teacher-dashboard/:teacherId", async (req, res) => {
+    try {
+      const teacherId = parseInt(req.params.teacherId);
+      const dashboardData = await storage.getTeacherDashboardData(teacherId);
+      res.json(dashboardData);
+    } catch (error) {
+      console.error("Error fetching teacher dashboard data:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Create teacher assignment by Academic Coordinator
+  app.post("/api/academic/assign-teacher", async (req, res) => {
+    try {
+      const { teacherId, sectionId, subjectId, isAdvisory = false } = req.body;
+      const assignedBy = req.session?.userId; // Academic Coordinator ID
+
+      if (!teacherId || !sectionId || !subjectId || !assignedBy) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const assignment = await storage.assignTeacherToSection(
+        teacherId, 
+        sectionId, 
+        subjectId, 
+        isAdvisory, 
+        assignedBy
+      );
+
+      res.status(201).json({ 
+        success: true, 
+        assignment,
+        message: `Teacher assigned successfully ${isAdvisory ? 'as adviser' : ''}` 
+      });
+    } catch (error) {
+      console.error("Error creating teacher assignment:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get assignments made by specific Academic Coordinator
+  app.get("/api/academic/my-assignments", async (req, res) => {
+    try {
+      const coordinatorId = req.session?.userId;
+      
+      if (!coordinatorId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const assignments = await storage.getTeacherAssignmentsByCoordinator(coordinatorId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching coordinator assignments:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get all teachers with their assignments
+  app.get("/api/academic/teachers-with-assignments", async (req, res) => {
+    try {
+      const teachersWithAssignments = await storage.getTeachersWithAssignments();
+      res.json(teachersWithAssignments);
+    } catch (error) {
+      console.error("Error fetching teachers with assignments:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Remove teacher assignment
+  app.delete("/api/academic/assignments/:assignmentId", async (req, res) => {
+    try {
+      const assignmentId = parseInt(req.params.assignmentId);
+      await storage.deleteTeacherAssignment(assignmentId);
+      res.json({ success: true, message: "Assignment removed successfully" });
+    } catch (error) {
+      console.error("Error removing assignment:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
