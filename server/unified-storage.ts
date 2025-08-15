@@ -452,8 +452,31 @@ export class DatabaseStorage implements IStorage {
   
   // Teacher Assignments Implementation
   async getTeacherAssignments(): Promise<any[]> {
-    // For now, return empty array since teacher assignments table needs proper schema reference
-    return [];
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          ta.id,
+          ta.teacher_id,
+          ta.subject_id,
+          ta.section_id,
+          ta.school_year,
+          ta.semester,
+          u.first_name || ' ' || u.last_name as teacher_name,
+          u.email as teacher_email,
+          sub.name as subject_name,
+          sec.name as section_name,
+          sec.grade_level
+        FROM teacher_assignments ta
+        JOIN users u ON ta.teacher_id = u.id
+        JOIN subjects sub ON ta.subject_id = sub.id
+        JOIN sections sec ON ta.section_id = sec.id
+        ORDER BY ta.id DESC
+      `);
+      return result.rows || [];
+    } catch (error) {
+      console.error('Error fetching teacher assignments:', error);
+      return [];
+    }
   }
   
   async getTeacherAssignmentsByCoordinator(): Promise<any[]> {
