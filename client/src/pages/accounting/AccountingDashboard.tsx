@@ -4,9 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { GuidedTour, useTour, TOUR_CONFIGS } from '@/components/ui/guided-tour';
+import { DashboardBackground } from '@/components/ui/dashboard-background';
+import { EnhancedCard } from '@/components/ui/enhanced-card';
+import { DollarSign } from 'lucide-react';
 
 export const AccountingDashboard: React.FC = () => {
   const { user } = useAuth();
+  
+  // Tour functionality
+  const { isTourActive, completeTour, skipTour, restartTour } = useTour('accounting');
 
   const { data: tuitionFees = [] } = useQuery({
     queryKey: ['/api/tuition-fees'],
@@ -33,27 +40,54 @@ export const AccountingDashboard: React.FC = () => {
   const totalRevenue = tuitionFees.reduce((sum: number, fee: any) => sum + parseFloat(fee.amount || 0), 0);
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-xl p-6 text-white">
-        <h2 className="text-2xl font-bold mb-2" data-testid="welcome-message">
-          Welcome back, {user.name}!
-        </h2>
-        <p className="opacity-90">Manage school finances and payment records efficiently.</p>
-      </div>
+    <DashboardBackground userRole="accounting" className="p-6">
+      <div className="space-y-6">
+        {/* Guided Tour */}
+        <GuidedTour
+          config={TOUR_CONFIGS.accounting}
+          isActive={isTourActive}
+          onComplete={completeTour}
+          onSkip={skipTour}
+        />
+        {/* Welcome Header */}
+        <EnhancedCard 
+          variant="gradient" 
+          className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-0"
+          data-testid="welcome-header"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold mb-2" data-testid="welcome-message">
+                Welcome back, {user.name}!
+              </h2>
+              <p className="opacity-90">Manage school finances and payment records efficiently.</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={restartTour}
+                className="text-white/80 hover:text-white hover:bg-white/20"
+              >
+                📚 Take Tour
+              </Button>
+              <DollarSign className="h-16 w-16 opacity-20" />
+            </div>
+          </div>
+        </EnhancedCard>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <EnhancedCard className="hover:shadow-lg transition-all duration-200" data-testid="revenue-stat">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <i className="fas fa-dollar-sign text-emerald-600"></i>
+            <DollarSign className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₱{totalRevenue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Current academic year</p>
           </CardContent>
-        </Card>
+        </EnhancedCard>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -93,7 +127,7 @@ export const AccountingDashboard: React.FC = () => {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Button className="h-20 bg-emerald-600 hover:bg-emerald-700 flex-col space-y-2" data-testid="payment-records">
+        <Button className="h-20 bg-emerald-600 hover:bg-emerald-700 flex-col space-y-2" data-testid="payment-processing">
           <i className="fas fa-receipt text-xl"></i>
           <span>Payment Records</span>
         </Button>
@@ -199,6 +233,7 @@ export const AccountingDashboard: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </DashboardBackground>
   );
 };

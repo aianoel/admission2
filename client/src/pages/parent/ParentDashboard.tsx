@@ -8,9 +8,13 @@ import { DashboardBackground } from '@/components/ui/dashboard-background';
 import { EnhancedCard, StatCard, ActionCard } from '@/components/ui/enhanced-card';
 import { EnhancedButton, QuickActionButton } from '@/components/ui/enhanced-button';
 import { Users, Calendar, MessageSquare, BarChart3, FileText, Trophy, Heart, BookOpen } from 'lucide-react';
+import { GuidedTour, useTour, TOUR_CONFIGS } from '@/components/ui/guided-tour';
 
 export const ParentDashboard: React.FC = () => {
   const { user } = useAuth();
+  
+  // Tour functionality
+  const { isTourActive, completeTour, skipTour, restartTour } = useTour('parent');
 
   // For demo purposes, we'll assume parent can view child's data
   const { data: children = [] } = useQuery({
@@ -39,6 +43,13 @@ export const ParentDashboard: React.FC = () => {
   return (
     <DashboardBackground userRole="parent" className="p-6">
       <div className="space-y-6">
+        {/* Guided Tour */}
+        <GuidedTour
+          config={TOUR_CONFIGS.parent}
+          isActive={isTourActive}
+          onComplete={completeTour}
+          onSkip={skipTour}
+        />
         {/* Welcome Header */}
         <EnhancedCard 
           variant="gradient" 
@@ -52,7 +63,17 @@ export const ParentDashboard: React.FC = () => {
               </h2>
               <p className="opacity-90">Keep track of your child's progress.</p>
             </div>
-            <Heart className="h-16 w-16 opacity-20" />
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={restartTour}
+                className="text-white/80 hover:text-white hover:bg-white/20"
+              >
+                📚 Take Tour
+              </Button>
+              <Heart className="h-16 w-16 opacity-20" />
+            </div>
           </div>
         </EnhancedCard>
 
@@ -102,7 +123,7 @@ export const ParentDashboard: React.FC = () => {
             description="Check academic progress"
             icon={BarChart3}
             color="green"
-            data-testid="view-child-grades"
+            data-testid="quick-grades"
           />
           <QuickActionButton
             title="Attendance"

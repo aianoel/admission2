@@ -13,10 +13,14 @@ import { TeacherClasses } from '@/components/teacher/TeacherClasses';
 import { RecentGrades } from '@/components/teacher/RecentGrades';
 import { EnhancedTeacherDashboard } from '@/components/teacher/EnhancedTeacherDashboard';
 import { BookOpen, Calendar, Trophy, Clock, FileText, Video, MessageSquare, BarChart3, Upload, Users, GraduationCap, ClipboardList } from 'lucide-react';
+import { GuidedTour, useTour, TOUR_CONFIGS } from '@/components/ui/guided-tour';
 
 export const TeacherDashboard: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
+  
+  // Tour functionality
+  const { isTourActive, completeTour, skipTour, restartTour } = useTour('teacher');
 
   if (!user || user.role !== 'teacher') {
     return <EmptyState message="Access denied. Teacher role required." />;
@@ -25,6 +29,13 @@ export const TeacherDashboard: React.FC = () => {
   return (
     <DashboardBackground userRole="teacher" className="p-6">
       <div className="space-y-6">
+        {/* Guided Tour */}
+        <GuidedTour
+          config={TOUR_CONFIGS.teacher}
+          isActive={isTourActive}
+          onComplete={completeTour}
+          onSkip={skipTour}
+        />
         {/* Welcome Header */}
         <EnhancedCard 
           variant="gradient" 
@@ -38,12 +49,24 @@ export const TeacherDashboard: React.FC = () => {
               </h2>
               <p className="opacity-90">Ready to inspire minds today?</p>
             </div>
-            <GraduationCap className="h-16 w-16 opacity-20" />
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={restartTour}
+                className="text-white/80 hover:text-white hover:bg-white/20"
+              >
+                📚 Take Tour
+              </Button>
+              <GraduationCap className="h-16 w-16 opacity-20" />
+            </div>
           </div>
         </EnhancedCard>
 
         {/* Quick Stats */}
-        <TeacherStats />
+        <div data-testid="teacher-classes">
+          <TeacherStats />
+        </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

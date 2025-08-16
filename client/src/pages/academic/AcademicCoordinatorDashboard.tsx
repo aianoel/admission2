@@ -16,6 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { GuidedTour, useTour, TOUR_CONFIGS } from "@/components/ui/guided-tour"; 
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   BookOpen,
   Users,
@@ -40,6 +42,10 @@ export function AcademicCoordinatorDashboard() {
   const [isGeneratingWeekly, setIsGeneratingWeekly] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  // Tour functionality
+  const { isTourActive, completeTour, skipTour, restartTour } = useTour('academic_coordinator');
 
   // Fetch academic coordinator specific data
   const { data: announcements = [], isLoading: announcementsLoading } = useQuery({
@@ -250,17 +256,37 @@ export function AcademicCoordinatorDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Academic Coordinator Dashboard</h1>
-        <p className="text-muted-foreground">
-          Curriculum management and academic excellence oversight
-        </p>
+      {/* Guided Tour */}
+      <GuidedTour
+        config={TOUR_CONFIGS.academic_coordinator}
+        isActive={isTourActive}
+        onComplete={completeTour}
+        onSkip={skipTour}
+      />
+      
+      <div data-testid="welcome-header">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Academic Coordinator Dashboard</h1>
+            <p className="text-muted-foreground">
+              Curriculum management and academic excellence oversight
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={restartTour}
+            className="text-sm"
+          >
+            📚 Take Tour
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
+          <TabsTrigger value="curriculum" data-testid="curriculum-tab">Curriculum</TabsTrigger>
           <TabsTrigger value="teachers">Teachers</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -525,7 +551,7 @@ export function AcademicCoordinatorDashboard() {
                   </ScrollArea>
                 </TabsContent>
 
-                <TabsContent value="assignments" className="space-y-4">
+                <TabsContent value="assignments" className="space-y-4" data-testid="assignments-tab">
                   <AssignmentManagement />
                 </TabsContent>
 

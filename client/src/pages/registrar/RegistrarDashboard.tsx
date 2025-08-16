@@ -8,9 +8,13 @@ import { DashboardBackground } from '@/components/ui/dashboard-background';
 import { EnhancedCard } from '@/components/ui/enhanced-card';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
 import { FileText, Users, UserPlus, UserCheck } from 'lucide-react';
+import { GuidedTour, useTour, TOUR_CONFIGS } from '@/components/ui/guided-tour';
 
 export const RegistrarDashboard: React.FC = () => {
   const { user } = useAuth();
+  
+  // Tour functionality
+  const { isTourActive, completeTour, skipTour, restartTour } = useTour('registrar');
 
   const { data: enrollments = [] } = useQuery({
     queryKey: ['/api/enrollments'],
@@ -39,6 +43,13 @@ export const RegistrarDashboard: React.FC = () => {
   return (
     <DashboardBackground userRole="registrar" className="p-6">
       <div className="space-y-6">
+        {/* Guided Tour */}
+        <GuidedTour
+          config={TOUR_CONFIGS.registrar}
+          isActive={isTourActive}
+          onComplete={completeTour}
+          onSkip={skipTour}
+        />
         {/* Welcome Header */}
         <EnhancedCard 
           variant="gradient" 
@@ -52,7 +63,17 @@ export const RegistrarDashboard: React.FC = () => {
               </h2>
               <p className="opacity-90">Manage student records and enrollment processes efficiently.</p>
             </div>
-            <FileText className="h-16 w-16 opacity-20" />
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={restartTour}
+                className="text-white/80 hover:text-white hover:bg-white/20"
+              >
+                📚 Take Tour
+              </Button>
+              <FileText className="h-16 w-16 opacity-20" />
+            </div>
           </div>
         </EnhancedCard>
 
@@ -69,38 +90,38 @@ export const RegistrarDashboard: React.FC = () => {
             </CardContent>
           </EnhancedCard>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Enrollments</CardTitle>
-            <i className="fas fa-clock text-orange-600"></i>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingEnrollments.length}</div>
-            <p className="text-xs text-muted-foreground">Awaiting approval</p>
-          </CardContent>
-        </Card>
+          <EnhancedCard className="hover:shadow-lg transition-all duration-200" data-testid="pending-enrollments">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Enrollments</CardTitle>
+              <UserPlus className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{pendingEnrollments.length}</div>
+              <p className="text-xs text-muted-foreground">Awaiting approval</p>
+            </CardContent>
+          </EnhancedCard>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Sections</CardTitle>
-            <i className="fas fa-layer-group text-blue-600"></i>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{sections.length}</div>
-            <p className="text-xs text-muted-foreground">Available sections</p>
-          </CardContent>
-        </Card>
+          <EnhancedCard className="hover:shadow-lg transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Sections</CardTitle>
+              <FileText className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{sections.length}</div>
+              <p className="text-xs text-muted-foreground">Available sections</p>
+            </CardContent>
+          </EnhancedCard>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Approved Today</CardTitle>
-            <i className="fas fa-check-circle text-green-600"></i>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">Today's approvals</p>
-          </CardContent>
-        </Card>
+          <EnhancedCard className="hover:shadow-lg transition-all duration-200" data-testid="student-records">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Approved Today</CardTitle>
+              <UserCheck className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">Today's approvals</p>
+            </CardContent>
+          </EnhancedCard>
       </div>
 
       {/* Quick Actions */}
@@ -218,6 +239,7 @@ export const RegistrarDashboard: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </DashboardBackground>
   );
 };
