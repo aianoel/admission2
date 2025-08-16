@@ -1994,7 +1994,7 @@ export function registerRoutes(app: Express): Server {
           senderName: sender ? 
             (sender.firstName && sender.lastName ? 
               `${sender.firstName} ${sender.lastName}` : 
-              sender.name || `User ${sender.id}`) : 'Unknown'
+              `User ${sender.id}`) : 'Unknown'
         });
         
         // Confirm to sender only

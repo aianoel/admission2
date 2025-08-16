@@ -16,5 +16,5 @@ if (usePostgreSQL) {
   export { db } from './db.js';
 } else {
   console.log('🐬 Using MySQL database');  
-  export { db } from './db-mysql.js';
+  export { db } from './db-mysql.ts';
 }
