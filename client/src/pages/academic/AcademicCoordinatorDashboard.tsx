@@ -35,6 +35,9 @@ import {
 
 export function AcademicCoordinatorDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
+  const [isGeneratingWeekly, setIsGeneratingWeekly] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -115,6 +118,20 @@ export function AcademicCoordinatorDashboard() {
     refetchInterval: 30000
   });
 
+  // Fetch teacher assignments
+  const { data: teacherAssignments = [], isLoading: assignmentsLoading } = useQuery({
+    queryKey: ["/api/academic/teacher-assignments"],
+    queryFn: () => apiRequest("/api/academic/teacher-assignments"),
+    refetchInterval: 300000
+  });
+
+  // Fetch teacher schedules
+  const { data: teacherSchedules = [], isLoading: schedulesDataLoading } = useQuery({
+    queryKey: ["/api/academic/teacher-schedules"],
+    queryFn: () => apiRequest("/api/academic/teacher-schedules"),
+    refetchInterval: 300000
+  });
+
   // Format date for display
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -160,10 +177,9 @@ export function AcademicCoordinatorDashboard() {
   // Mutations for teacher assignments
   const assignSectionMutation = useMutation({
     mutationFn: async (data: { teacherId: number; sectionId: number; isAdvisory: boolean }) =>
-      apiRequest(`/api/academic/teachers/${data.teacherId}/assign-section`, {
-        method: "POST",
-        body: JSON.stringify({ sectionId: data.sectionId, isAdvisory: data.isAdvisory }),
-        headers: { "Content-Type": "application/json" }
+      apiRequest(`/api/academic/teachers/${data.teacherId}/assign-section`, "POST", {
+        sectionId: data.sectionId, 
+        isAdvisory: data.isAdvisory
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/academic/teachers"] });
@@ -177,10 +193,9 @@ export function AcademicCoordinatorDashboard() {
 
   const assignSubjectMutation = useMutation({
     mutationFn: async (data: { teacherId: number; sectionId: number; subjectId: number }) =>
-      apiRequest(`/api/academic/teachers/${data.teacherId}/assign-subject`, {
-        method: "POST",
-        body: JSON.stringify({ sectionId: data.sectionId, subjectId: data.subjectId }),
-        headers: { "Content-Type": "application/json" }
+      apiRequest(`/api/academic/teachers/${data.teacherId}/assign-subject`, "POST", {
+        sectionId: data.sectionId, 
+        subjectId: data.subjectId
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/academic/teachers"] });
@@ -193,11 +208,7 @@ export function AcademicCoordinatorDashboard() {
 
   const createScheduleMutation = useMutation({
     mutationFn: async (data: any) =>
-      apiRequest("/api/academic/schedules", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" }
-      }),
+      apiRequest("/api/academic/schedules", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/academic/schedules"] });
       toast({ title: "Success", description: "Schedule created successfully" });
@@ -209,11 +220,7 @@ export function AcademicCoordinatorDashboard() {
 
   const uploadModuleMutation = useMutation({
     mutationFn: async (data: any) =>
-      apiRequest("/api/academic/modules", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" }
-      }),
+      apiRequest("/api/academic/modules", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/academic/modules"] });
       toast({ title: "Success", description: "Module uploaded successfully" });
@@ -964,6 +971,13 @@ function AssignmentManagement() {
   );
 }
 
+
+// Orphaned code fragment removed
+
+
+// Orphaned code fragment removed
+}
+
 // Schedule Management Component
 function ScheduleManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -1027,11 +1041,7 @@ function ScheduleManagement() {
 
   const createScheduleMutation = useMutation({
     mutationFn: async (data: any) =>
-      apiRequest("/api/academic/schedules", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" }
-      }),
+      apiRequest("/api/academic/schedules", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/academic/schedules"] });
       toast({ title: "Success", description: "Schedule created successfully" });
@@ -1095,11 +1105,7 @@ function ScheduleManagement() {
           endTime: data.endTime,
           room: data.room
         };
-        await apiRequest("/api/academic/schedules", {
-          method: "POST",
-          body: JSON.stringify(scheduleData),
-          headers: { "Content-Type": "application/json" }
-        });
+        await apiRequest("/api/academic/schedules", "POST", scheduleData);
       }
       queryClient.invalidateQueries({ queryKey: ["/api/academic/schedules"] });
       toast({ title: "Success", description: "Weekly schedule generated successfully for Monday to Saturday" });
@@ -1447,11 +1453,7 @@ function ModuleManagement() {
 
   const uploadModuleMutation = useMutation({
     mutationFn: async (data: any) =>
-      apiRequest("/api/academic/modules", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" }
-      }),
+      apiRequest("/api/academic/modules", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/academic/modules"] });
       toast({ title: "Success", description: "Module uploaded successfully" });
