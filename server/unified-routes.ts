@@ -1037,10 +1037,7 @@ export function registerRoutes(app: Express): Server {
 
       const assignment = await storage.assignTeacherToSection(
         teacherId, 
-        sectionId, 
-        subjectId, 
-        isAdvisory, 
-        assignedBy
+        sectionId
       );
 
       res.status(201).json({ 
@@ -1063,7 +1060,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const assignments = await storage.getTeacherAssignmentsByCoordinator(coordinatorId);
+      const assignments = await storage.getTeacherAssignmentsByCoordinator();
       res.json(assignments);
     } catch (error) {
       console.error("Error fetching coordinator assignments:", error);
@@ -1292,7 +1289,7 @@ export function registerRoutes(app: Express): Server {
       const hashedPassword = await bcrypt.hash(password, 12);
       
       // Parse name safely
-      const nameParts = name.trim().split(' ').filter(part => part.length > 0);
+      const nameParts = name.trim().split(' ').filter((part: string) => part.length > 0);
       const firstName = nameParts[0] || 'User';
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User';
 
@@ -1518,8 +1515,7 @@ export function registerRoutes(app: Express): Server {
       const announcement = await storage.createAnnouncement({
         title,
         content,
-        postedBy: req.user?.id || 1, // Default to admin user
-        datePosted: new Date()
+        postedBy: (req as any).session?.userId || 1
       });
       res.json(announcement);
     } catch (error) {
@@ -1941,7 +1937,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ error: "Section IDs are required" });
       }
       
-      await storage.shareFolderWithSections(folderId, sectionIds, 10); // Pass teacher ID
+      await storage.shareFolderWithSections(folderId, sectionIds);
       res.json({ success: true });
     } catch (error) {
       console.error("Error sharing folder:", error);
