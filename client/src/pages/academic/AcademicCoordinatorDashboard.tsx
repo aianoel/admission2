@@ -968,6 +968,7 @@ function AssignmentManagement() {
 function ScheduleManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [isGeneratingWeekly, setIsGeneratingWeekly] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -995,6 +996,14 @@ function ScheduleManagement() {
   const { data: subjects = [] } = useQuery({
     queryKey: ["/api/academic/subjects"],
     queryFn: () => apiRequest("/api/academic/subjects")
+  });
+
+  // Fetch students for the selected section
+  const { data: sectionStudents = [] } = useQuery({
+    queryKey: ["/api/academic/students/section", selectedAssignment?.sectionId],
+    queryFn: () => selectedAssignment?.sectionId ? 
+      apiRequest(`/api/academic/students?sectionId=${selectedAssignment.sectionId}`) : Promise.resolve([]),
+    enabled: !!selectedAssignment?.sectionId
   });
 
   // Filter teachers who have assignments
