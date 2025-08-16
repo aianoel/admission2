@@ -967,6 +967,7 @@ function AssignmentManagement() {
 // Schedule Management Component
 function ScheduleManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [isGeneratingWeekly, setIsGeneratingWeekly] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -980,6 +981,12 @@ function ScheduleManagement() {
     queryFn: () => apiRequest("/api/academic/teachers")
   });
 
+  // Fetch teacher assignments to filter teachers
+  const { data: teacherAssignments = [] } = useQuery({
+    queryKey: ["/api/academic/teacher-assignments"],
+    queryFn: () => apiRequest("/api/academic/teacher-assignments")
+  });
+
   const { data: sections = [] } = useQuery({
     queryKey: ["/api/academic/sections"],
     queryFn: () => apiRequest("/api/academic/sections")
@@ -989,6 +996,25 @@ function ScheduleManagement() {
     queryKey: ["/api/academic/subjects"],
     queryFn: () => apiRequest("/api/academic/subjects")
   });
+
+  // Filter teachers who have assignments
+  const assignedTeachers = teachers.filter((teacher: any) => 
+    teacherAssignments.some((assignment: any) => assignment.teacher_id === teacher.id)
+  );
+
+  // Get unique teacher-subject-section combinations from assignments
+  const getAssignmentOptions = () => {
+    return teacherAssignments.map((assignment: any) => ({
+      id: `${assignment.teacher_id}-${assignment.subject_id}-${assignment.section_id}`,
+      teacherId: assignment.teacher_id,
+      teacherName: assignment.teacher_name,
+      subjectId: assignment.subject_id,
+      subjectName: assignment.subject_name,
+      sectionId: assignment.section_id,
+      sectionName: assignment.section_name,
+      display: `${assignment.teacher_name} - ${assignment.subject_name} - ${assignment.section_name}`
+    }));
+  };
 
   const createScheduleMutation = useMutation({
     mutationFn: async (data: any) =>
@@ -1009,9 +1035,7 @@ function ScheduleManagement() {
 
   const scheduleForm = useForm({
     resolver: zodResolver(z.object({
-      teacherId: z.string(),
-      sectionId: z.string(),
-      subjectId: z.string(),
+      assignmentId: z.string(),
       dayOfWeek: z.string(),
       startTime: z.string(),
       endTime: z.string(),
@@ -1019,8 +1043,63 @@ function ScheduleManagement() {
     }))
   });
 
+  const bulkScheduleForm = useForm({
+    resolver: zodResolver(z.object({
+      assignmentId: z.string(),
+      startTime: z.string(),
+      endTime: z.string(),
+      room: z.string()
+    }))
+  });
+
   const handleCreateSchedule = (data: any) => {
-    createScheduleMutation.mutate(data);
+    const assignment = getAssignmentOptions().find(a => a.id === data.assignmentId);
+    if (!assignment) return;
+
+    const scheduleData = {
+      teacherId: assignment.teacherId,
+      sectionId: assignment.sectionId,
+      subjectId: assignment.subjectId,
+      dayOfWeek: data.dayOfWeek,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      room: data.room
+    };
+    createScheduleMutation.mutate(scheduleData);
+  };
+
+  const handleGenerateWeeklySchedule = async (data: any) => {
+    const assignment = getAssignmentOptions().find(a => a.id === data.assignmentId);
+    if (!assignment) return;
+
+    setIsGeneratingWeekly(true);
+    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    
+    try {
+      for (const day of daysOfWeek) {
+        const scheduleData = {
+          teacherId: assignment.teacherId,
+          sectionId: assignment.sectionId,
+          subjectId: assignment.subjectId,
+          dayOfWeek: day,
+          startTime: data.startTime,
+          endTime: data.endTime,
+          room: data.room
+        };
+        await apiRequest("/api/academic/schedules", {
+          method: "POST",
+          body: JSON.stringify(scheduleData),
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/academic/schedules"] });
+      toast({ title: "Success", description: "Weekly schedule generated successfully for Monday to Friday" });
+      setShowCreateDialog(false);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to generate weekly schedule", variant: "destructive" });
+    } finally {
+      setIsGeneratingWeekly(false);
+    }
   };
 
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -1036,87 +1115,45 @@ function ScheduleManagement() {
               Create Schedule
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Create New Schedule</DialogTitle>
-              <DialogDescription>Add a new class schedule</DialogDescription>
+              <DialogDescription>Add schedules for assigned teachers</DialogDescription>
             </DialogHeader>
-            <Form {...scheduleForm}>
-              <form onSubmit={scheduleForm.handleSubmit(handleCreateSchedule)} className="space-y-4">
-                <FormField
-                  control={scheduleForm.control}
-                  name="teacherId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Teacher</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-teacher">
-                            <SelectValue placeholder="Select teacher" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {teachers.map((teacher: any) => (
-                            <SelectItem key={teacher.id} value={teacher.id.toString()}>
-                              {teacher.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <Tabs defaultValue="single" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="single">Single Day</TabsTrigger>
+                <TabsTrigger value="weekly">Weekly (Mon-Fri)</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="single">
+                <Form {...scheduleForm}>
+                  <form onSubmit={scheduleForm.handleSubmit(handleCreateSchedule)} className="space-y-4">
+                    <FormField
+                      control={scheduleForm.control}
+                      name="assignmentId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Teacher Assignment</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-teacher-assignment">
+                                <SelectValue placeholder="Select teacher assignment" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {getAssignmentOptions().map((assignment: any) => (
+                                <SelectItem key={assignment.id} value={assignment.id}>
+                                  {assignment.display}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={scheduleForm.control}
-                  name="sectionId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Section</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-schedule-section">
-                            <SelectValue placeholder="Select section" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {sections.map((section: any) => (
-                            <SelectItem key={section.id} value={section.id.toString()}>
-                              {section.name} (Grade {section.grade_level})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={scheduleForm.control}
-                  name="subjectId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Subject</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-schedule-subject">
-                            <SelectValue placeholder="Select subject" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {subjects.map((subject: any) => (
-                            <SelectItem key={subject.id} value={subject.id.toString()}>
-                              {subject.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 <FormField
                   control={scheduleForm.control}
@@ -1187,13 +1224,106 @@ function ScheduleManagement() {
                   )}
                 />
 
-                <DialogFooter>
-                  <Button type="submit" data-testid="button-create-schedule-submit">
-                    Create Schedule
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
+                    <DialogFooter>
+                      <Button type="submit" data-testid="button-create-schedule-submit">
+                        Create Schedule
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </TabsContent>
+              
+              <TabsContent value="weekly">
+                <Form {...bulkScheduleForm}>
+                  <form onSubmit={bulkScheduleForm.handleSubmit(handleGenerateWeeklySchedule)} className="space-y-4">
+                    <FormField
+                      control={bulkScheduleForm.control}
+                      name="assignmentId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Teacher Assignment</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-weekly-teacher-assignment">
+                                <SelectValue placeholder="Select teacher assignment" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {getAssignmentOptions().map((assignment: any) => (
+                                <SelectItem key={assignment.id} value={assignment.id}>
+                                  {assignment.display}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={bulkScheduleForm.control}
+                        name="startTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start Time</FormLabel>
+                            <FormControl>
+                              <Input type="time" {...field} data-testid="input-weekly-start-time" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={bulkScheduleForm.control}
+                        name="endTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>End Time</FormLabel>
+                            <FormControl>
+                              <Input type="time" {...field} data-testid="input-weekly-end-time" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={bulkScheduleForm.control}
+                      name="room"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Room</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Room number/name" {...field} data-testid="input-weekly-room" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        📅 This will create schedules for Monday through Friday with the same time and room.
+                      </p>
+                    </div>
+
+                    <DialogFooter>
+                      <Button 
+                        type="submit" 
+                        data-testid="button-generate-weekly-schedule"
+                        disabled={isGeneratingWeekly}
+                      >
+                        {isGeneratingWeekly ? "Generating..." : "Generate Weekly Schedule"}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
       </div>
