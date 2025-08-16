@@ -1,6 +1,8 @@
 -- =====================================================
 -- Create Admin Account for Hostinger MySQL Database
 -- =====================================================
+-- Database: u870495195_admission
+-- Username: u870495195_admission
 -- Run this SQL script in your Hostinger MySQL database
 -- to create the admin account for login
 
