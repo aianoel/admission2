@@ -6,6 +6,7 @@ import { HeroSlider } from '../components/landing/HeroSlider';
 import { AnnouncementMarquee } from '../components/landing/AnnouncementMarquee';
 import { NewsSection } from '../components/landing/NewsSection';
 import { EventsSection } from '../components/landing/EventsSection';
+import { AIChat } from '../components/landing/AIChat';
 import { useLandingPageData } from '../hooks/useLandingPageData';
 
 interface LandingPageProps {
@@ -354,6 +355,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onEnroll
           </div>
         </div>
       </footer>
+
+      {/* AI Chat Support */}
+      <AIChat 
+        onLoginClick={onLoginClick}
+        onEnrollmentClick={onEnrollmentClick}
+      />
     </div>
   );
 };
