@@ -184,10 +184,12 @@ export function AcademicCoordinatorDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/academic/teachers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/academic/sections"] });
-      toast({ title: "Success", description: "Teacher assignment updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/academic/teacher-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/academic/teacher-schedules"] });
+      toast({ title: "Success", description: "Section assigned successfully" });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to assign teacher", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to assign section", variant: "destructive" });
     }
   });
 
@@ -199,6 +201,9 @@ export function AcademicCoordinatorDashboard() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/academic/teachers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/academic/sections"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/academic/teacher-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/academic/teacher-schedules"] });
       toast({ title: "Success", description: "Subject assigned successfully" });
     },
     onError: () => {
@@ -714,6 +719,12 @@ function TeacherCard({ teacher, onAssign }: { teacher: any; onAssign: (teacherId
     queryFn: () => apiRequest("/api/academic/subjects")
   });
 
+  // Fetch teacher assignments to show current assignments
+  const { data: teacherAssignments = [] } = useQuery({
+    queryKey: ["/api/academic/teacher-assignments", teacher.id],
+    queryFn: () => apiRequest(`/api/academic/teacher-assignments?teacherId=${teacher.id}`)
+  });
+
   const assignmentForm = useForm({
     resolver: zodResolver(assignmentType === 'section' 
       ? z.object({ sectionId: z.string(), isAdvisory: z.boolean().default(false) })
@@ -741,29 +752,50 @@ function TeacherCard({ teacher, onAssign }: { teacher: any; onAssign: (teacherId
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Sections:</span>
-              <div className="font-medium">{teacher.sectionsCount}</div>
+              <div className="font-medium">{teacher.sectionsCount || teacherAssignments.filter((a: any) => a.section_id).length}</div>
             </div>
             <div>
               <span className="text-muted-foreground">Subjects:</span>
-              <div className="font-medium">{teacher.subjectsCount}</div>
+              <div className="font-medium">{teacher.subjectsCount || teacherAssignments.filter((a: any) => a.subject_id).length}</div>
             </div>
             <div>
               <span className="text-muted-foreground">Tasks:</span>
-              <div className="font-medium">{teacher.tasksCount}</div>
+              <div className="font-medium">{teacher.tasksCount || 0}</div>
             </div>
             <div>
               <span className="text-muted-foreground">Meetings:</span>
-              <div className="font-medium">{teacher.meetingsCount}</div>
+              <div className="font-medium">{teacher.meetingsCount || 0}</div>
             </div>
           </div>
-          {teacher.subjects.length > 0 && (
+          
+          {/* Current Assignments Display */}
+          {teacherAssignments.length > 0 && (
+            <div className="mt-3 space-y-2">
+              <div className="text-xs text-muted-foreground font-medium">Current Assignments:</div>
+              <div className="space-y-1">
+                {teacherAssignments.map((assignment: any) => (
+                  <div key={assignment.id} className="flex items-center gap-2 text-xs">
+                    <Badge variant="outline" className="text-xs">
+                      {assignment.subject_name}
+                    </Badge>
+                    <span className="text-muted-foreground">→</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {assignment.section_name}
+                    </Badge>
+                    {assignment.is_advisory && (
+                      <Badge variant="default" className="text-xs">
+                        Adviser
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {teacherAssignments.length === 0 && (
             <div className="mt-2">
-              <span className="text-xs text-muted-foreground">Teaching: </span>
-              {teacher.subjects.map((subject: string, index: number) => (
-                <Badge key={index} variant="outline" className="mr-1 text-xs">
-                  {subject}
-                </Badge>
-              ))}
+              <span className="text-xs text-muted-foreground italic">No assignments yet</span>
             </div>
           )}
         </div>
@@ -902,10 +934,30 @@ function AssignmentManagement() {
     queryFn: () => apiRequest("/api/academic/sections")
   });
 
+  const { data: allAssignments = [] } = useQuery({
+    queryKey: ["/api/academic/teacher-assignments"],
+    queryFn: () => apiRequest("/api/academic/teacher-assignments")
+  });
+
+  // Group assignments by teacher
+  const teacherAssignmentMap = allAssignments.reduce((acc: any, assignment: any) => {
+    if (!acc[assignment.teacher_id]) {
+      acc[assignment.teacher_id] = [];
+    }
+    acc[assignment.teacher_id].push(assignment);
+    return acc;
+  }, {});
+
+  // Get section advisers from assignments
+  const sectionAdvisers = allAssignments.filter((assignment: any) => assignment.is_advisory);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Teacher Assignments</h3>
+        <div className="text-sm text-muted-foreground">
+          Total Assignments: {allAssignments.length}
+        </div>
       </div>
       
       <div className="grid gap-4">
@@ -915,54 +967,70 @@ function AssignmentManagement() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {sections.map((section: any) => (
-                <div key={section.id} className="flex items-center justify-between p-2 border rounded">
-                  <div>
-                    <span className="font-medium">{section.name}</span>
-                    <span className="text-sm text-muted-foreground ml-2">Grade {section.grade_level}</span>
+              {sections.map((section: any) => {
+                const adviser = sectionAdvisers.find((assignment: any) => assignment.section_id === section.id);
+                return (
+                  <div key={section.id} className="flex items-center justify-between p-2 border rounded">
+                    <div>
+                      <span className="font-medium">{section.name}</span>
+                      <span className="text-sm text-muted-foreground ml-2">Grade {section.grade_level}</span>
+                    </div>
+                    <div>
+                      {adviser ? (
+                        <Badge variant="default">{adviser.teacher_name}</Badge>
+                      ) : (
+                        <Badge variant="secondary">No Adviser</Badge>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    {section.adviser_name ? (
-                      <Badge variant="default">{section.adviser_name}</Badge>
-                    ) : (
-                      <Badge variant="secondary">No Adviser</Badge>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Teacher Assignments Summary</CardTitle>
+            <CardTitle className="text-base">All Teacher Assignments</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {teachers.map((teacher: any) => (
-                <div key={teacher.id} className="border rounded p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">{teacher.name}</h4>
-                      <p className="text-sm text-muted-foreground">{teacher.email}</p>
+            <div className="space-y-4">
+              {teachers.map((teacher: any) => {
+                const assignments = teacherAssignmentMap[teacher.id] || [];
+                return (
+                  <div key={teacher.id} className="border rounded p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h4 className="font-medium">{teacher.name}</h4>
+                        <p className="text-sm text-muted-foreground">{teacher.email}</p>
+                      </div>
+                      <div className="text-right text-sm">
+                        <div className="text-xs text-muted-foreground">Assignments: {assignments.length}</div>
+                      </div>
                     </div>
-                    <div className="text-right text-sm">
-                      <div>{teacher.sectionsCount} sections</div>
-                      <div>{teacher.subjectsCount} subjects</div>
-                    </div>
+                    
+                    {assignments.length > 0 ? (
+                      <div className="space-y-2">
+                        {assignments.map((assignment: any) => (
+                          <div key={assignment.id} className="flex items-center gap-2 p-2 bg-muted/30 rounded text-sm">
+                            <Badge variant="outline">{assignment.subject_name}</Badge>
+                            <span className="text-muted-foreground">→</span>
+                            <Badge variant="secondary">{assignment.section_name}</Badge>
+                            {assignment.is_advisory && (
+                              <Badge variant="default" className="text-xs">Adviser</Badge>
+                            )}
+                            <div className="ml-auto text-xs text-muted-foreground">
+                              {new Date(assignment.created_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground italic">No assignments yet</div>
+                    )}
                   </div>
-                  {teacher.subjects.length > 0 && (
-                    <div className="mt-2">
-                      {teacher.subjects.map((subject: string, index: number) => (
-                        <Badge key={index} variant="outline" className="mr-1 text-xs">
-                          {subject}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -971,12 +1039,6 @@ function AssignmentManagement() {
   );
 }
 
-
-// Orphaned code fragment removed
-
-
-// Orphaned code fragment removed
-}
 
 // Schedule Management Component
 function ScheduleManagement() {
