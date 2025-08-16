@@ -813,6 +813,31 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get students by section
+  app.get("/api/academic/students", async (req, res) => {
+    try {
+      const { sectionId } = req.query;
+      
+      if (sectionId) {
+        const students = await storage.getStudentsBySection(parseInt(sectionId as string));
+        res.json(students);
+      } else {
+        // Return all students if no sectionId specified
+        const result = await pool.query(`
+          SELECT u.id, u.first_name as "firstName", u.last_name as "lastName", 
+                 u.email, u.phone_number as "phoneNumber"
+          FROM users u 
+          WHERE u.role_id = 5 
+          ORDER BY u.last_name, u.first_name
+        `);
+        res.json(result.rows || []);
+      }
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // POST endpoint for creating subjects
   app.post("/api/academic/subjects", async (req, res) => {
     try {

@@ -1062,7 +1062,7 @@ function ScheduleManagement() {
   });
 
   const handleCreateSchedule = (data: any) => {
-    const assignment = getAssignmentOptions().find(a => a.id === data.assignmentId);
+    const assignment = getAssignmentOptions().find((a: any) => a.id === data.assignmentId);
     if (!assignment) return;
 
     const scheduleData = {
@@ -1078,11 +1078,11 @@ function ScheduleManagement() {
   };
 
   const handleGenerateWeeklySchedule = async (data: any) => {
-    const assignment = getAssignmentOptions().find(a => a.id === data.assignmentId);
+    const assignment = getAssignmentOptions().find((a: any) => a.id === data.assignmentId);
     if (!assignment) return;
 
     setIsGeneratingWeekly(true);
-    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     
     try {
       for (const day of daysOfWeek) {
@@ -1102,7 +1102,7 @@ function ScheduleManagement() {
         });
       }
       queryClient.invalidateQueries({ queryKey: ["/api/academic/schedules"] });
-      toast({ title: "Success", description: "Weekly schedule generated successfully for Monday to Friday" });
+      toast({ title: "Success", description: "Weekly schedule generated successfully for Monday to Saturday" });
       setShowCreateDialog(false);
     } catch (error) {
       toast({ title: "Error", description: "Failed to generate weekly schedule", variant: "destructive" });
@@ -1132,7 +1132,7 @@ function ScheduleManagement() {
             <Tabs defaultValue="single" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="single">Single Day</TabsTrigger>
-                <TabsTrigger value="weekly">Weekly (Mon-Fri)</TabsTrigger>
+                <TabsTrigger value="weekly">Weekly (Mon-Sat)</TabsTrigger>
               </TabsList>
               
               <TabsContent value="single">
@@ -1144,7 +1144,11 @@ function ScheduleManagement() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Teacher Assignment</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={(value) => {
+                            field.onChange(value);
+                            const assignment = getAssignmentOptions().find((a: any) => a.id === value);
+                            setSelectedAssignment(assignment);
+                          }} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger data-testid="select-teacher-assignment">
                                 <SelectValue placeholder="Select teacher assignment" />
@@ -1162,6 +1166,26 @@ function ScheduleManagement() {
                         </FormItem>
                       )}
                     />
+
+                    {/* Display registered students */}
+                    {selectedAssignment && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                        <h4 className="font-medium text-sm mb-2 text-blue-700 dark:text-blue-300">
+                          📚 Registered Students ({sectionStudents.length})
+                        </h4>
+                        <div className="max-h-32 overflow-y-auto space-y-1">
+                          {sectionStudents.length > 0 ? (
+                            sectionStudents.map((student: any) => (
+                              <div key={student.id} className="text-xs text-blue-600 dark:text-blue-400">
+                                • {student.name || `${student.firstName} ${student.lastName}`}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-muted-foreground">No students registered in this section</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
 
                 <FormField
@@ -1251,7 +1275,11 @@ function ScheduleManagement() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Teacher Assignment</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={(value) => {
+                            field.onChange(value);
+                            const assignment = getAssignmentOptions().find((a: any) => a.id === value);
+                            setSelectedAssignment(assignment);
+                          }} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger data-testid="select-weekly-teacher-assignment">
                                 <SelectValue placeholder="Select teacher assignment" />
@@ -1269,6 +1297,26 @@ function ScheduleManagement() {
                         </FormItem>
                       )}
                     />
+
+                    {/* Display registered students for weekly schedule */}
+                    {selectedAssignment && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                        <h4 className="font-medium text-sm mb-2 text-blue-700 dark:text-blue-300">
+                          📚 Registered Students ({sectionStudents.length})
+                        </h4>
+                        <div className="max-h-32 overflow-y-auto space-y-1">
+                          {sectionStudents.length > 0 ? (
+                            sectionStudents.map((student: any) => (
+                              <div key={student.id} className="text-xs text-blue-600 dark:text-blue-400">
+                                • {student.name || `${student.firstName} ${student.lastName}`}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-muted-foreground">No students registered in this section</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
@@ -1314,9 +1362,9 @@ function ScheduleManagement() {
                       )}
                     />
 
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        📅 This will create schedules for Monday through Friday with the same time and room.
+                    <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        📅 This will create schedules for Monday through Saturday with the same time and room.
                       </p>
                     </div>
 
@@ -1326,7 +1374,7 @@ function ScheduleManagement() {
                         data-testid="button-generate-weekly-schedule"
                         disabled={isGeneratingWeekly}
                       >
-                        {isGeneratingWeekly ? "Generating..." : "Generate Weekly Schedule"}
+                        {isGeneratingWeekly ? "Generating..." : "Generate Monday-Saturday Schedule"}
                       </Button>
                     </DialogFooter>
                   </form>
