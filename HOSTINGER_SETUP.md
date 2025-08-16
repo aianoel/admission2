@@ -2,30 +2,83 @@
 
 ## For Hostinger Shared Hosting
 
-### 1. Build Locally
+### Database Choice: PostgreSQL vs MySQL
+
+Hostinger supports both PostgreSQL and MySQL. Choose based on your preference:
+- **PostgreSQL**: More advanced features, better for complex queries
+- **MySQL**: Widely supported, often better performance on shared hosting
+
+### Option A: PostgreSQL Setup
+
+#### 1. Build Locally
 ```bash
 npm install
 npm run build
 ```
 
-### 2. Upload Files
+#### 2. Upload Files
 Upload these files/folders to your Hostinger `public_html` directory:
 - `dist/` (entire folder)
 - `node_modules/` (entire folder)
 - `.htaccess`
 - `.env` (create from .env.example)
 
-### 3. Database Setup
+#### 3. PostgreSQL Database Setup
 1. Create PostgreSQL database in Hostinger control panel
 2. Update `.env` with your database URL:
 ```
 DATABASE_URL=postgresql://username:password@hostname:port/database_name
+DB_TYPE=postgresql
 ```
 
-### 4. Initialize Database
+#### 4. Initialize PostgreSQL Database
 Run this once to set up tables:
 ```bash
 npm run db:push
+```
+
+### Option B: MySQL Setup (Recommended for Hostinger)
+
+#### 1. Build Locally
+```bash
+npm install
+npm install mysql2
+npm run build
+```
+
+#### 2. Switch to MySQL
+```bash
+# Set environment variable
+echo "DB_TYPE=mysql" >> .env
+echo "DATABASE_URL=mysql://username:password@hostname:port/database_name" >> .env
+
+# Run MySQL setup script
+node scripts/mysql-setup.js
+```
+
+#### 3. Upload Files
+Upload these files/folders to your Hostinger `public_html` directory:
+- `dist/` (entire folder)
+- `node_modules/` (entire folder)
+- `shared/mysql-schema.ts`
+- `server/mysql-db.ts`
+- `drizzle.mysql.config.ts`
+- `.htaccess`
+- `.env`
+
+#### 4. MySQL Database Setup
+1. Create MySQL database in Hostinger control panel
+2. Update `.env` with your MySQL database URL:
+```
+DATABASE_URL=mysql://username:password@hostname:port/database_name
+DB_TYPE=mysql
+```
+
+#### 5. Initialize MySQL Database
+Run this once to set up tables:
+```bash
+# Use MySQL configuration
+npx drizzle-kit push --config=drizzle.mysql.config.ts
 ```
 
 ### 5. Start Application
@@ -98,7 +151,8 @@ server {
 ## Environment Variables
 
 Required:
-- `DATABASE_URL` - PostgreSQL connection string
+- `DATABASE_URL` - Database connection string (PostgreSQL or MySQL)
+- `DB_TYPE` - Set to "postgresql" or "mysql"
 - `NODE_ENV=production`
 - `PORT=5000`
 - `SESSION_SECRET` - Random string
@@ -107,13 +161,26 @@ Optional:
 - `OPENAI_API_KEY` - For AI features
 - `SEMAPHORE_API_KEY` - For SMS notifications
 
+### Database URL Formats:
+```bash
+# PostgreSQL
+DATABASE_URL=postgresql://username:password@hostname:port/database_name
+DB_TYPE=postgresql
+
+# MySQL
+DATABASE_URL=mysql://username:password@hostname:port/database_name
+DB_TYPE=mysql
+```
+
 ## Troubleshooting
 
 ### Common Issues:
 1. **Node version**: Ensure Node.js 18+ is installed
 2. **Port conflicts**: Change PORT in .env if needed
-3. **Database**: Verify connection string format
+3. **Database**: Verify connection string format and DB_TYPE setting
 4. **Permissions**: Check file permissions after upload
+5. **MySQL vs PostgreSQL**: Ensure DB_TYPE matches your database URL
+6. **Missing mysql2**: Run `npm install mysql2` if using MySQL
 
 ### Check Status:
 ```bash

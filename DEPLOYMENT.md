@@ -3,15 +3,40 @@
 ## Prerequisites
 
 - Node.js 18+ installed on your Hostinger hosting
-- PostgreSQL database (can use Hostinger's database service)
+- Database: PostgreSQL OR MySQL (both supported on Hostinger)
 - Access to your Hostinger hosting control panel
+
+## Database Selection
+
+EduManage supports both PostgreSQL and MySQL. Choose based on:
+
+**PostgreSQL** (Original):
+- Advanced features and JSON support
+- Better for complex queries
+- Original development database
+
+**MySQL** (Recommended for Hostinger):
+- Excellent performance on shared hosting
+- Widely supported by hosting providers
+- Often faster for web applications
+- Better memory efficiency
 
 ## Step 1: Prepare Your Database
 
+### For PostgreSQL:
 1. Create a PostgreSQL database in your Hostinger control panel
 2. Note down the database credentials:
    - Host
-   - Port
+   - Port (usually 5432)
+   - Database name
+   - Username
+   - Password
+
+### For MySQL (Recommended):
+1. Create a MySQL database in your Hostinger control panel
+2. Note down the database credentials:
+   - Host
+   - Port (usually 3306)
    - Database name
    - Username
    - Password
@@ -54,9 +79,21 @@
 
 ## Step 4: Configure Environment Variables
 
+### For PostgreSQL:
 1. Create a `.env` file in your root directory with:
    ```
    DATABASE_URL=postgresql://username:password@hostname:port/database_name
+   DB_TYPE=postgresql
+   NODE_ENV=production
+   PORT=5000
+   SESSION_SECRET=your-super-secret-session-key
+   ```
+
+### For MySQL:
+1. Create a `.env` file in your root directory with:
+   ```
+   DATABASE_URL=mysql://username:password@hostname:port/database_name
+   DB_TYPE=mysql
    NODE_ENV=production
    PORT=5000
    SESSION_SECRET=your-super-secret-session-key
@@ -66,12 +103,25 @@
 
 ## Step 5: Database Setup
 
+### For PostgreSQL:
 1. Connect to your database and run the schema setup:
    ```bash
    npm run db:push
    ```
 
-2. This will create all necessary tables and relationships
+### For MySQL:
+1. Install MySQL driver and setup:
+   ```bash
+   npm install mysql2
+   node scripts/mysql-setup.js
+   ```
+
+2. Or manually push MySQL schema:
+   ```bash
+   npx drizzle-kit push --config=drizzle.mysql.config.ts
+   ```
+
+3. This will create all necessary tables and relationships
 
 ## Step 6: Start the Application
 
@@ -99,7 +149,8 @@
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| DATABASE_URL | PostgreSQL connection string | Yes |
+| DATABASE_URL | Database connection string (PostgreSQL or MySQL) | Yes |
+| DB_TYPE | Database type: "postgresql" or "mysql" | Yes |
 | NODE_ENV | Set to "production" | Yes |
 | PORT | Server port (usually 5000) | Yes |
 | SESSION_SECRET | Random secret for sessions | Yes |
