@@ -38,6 +38,21 @@ export async function getDatabase() {
   }
 }
 
+// Get appropriate storage implementation
+export async function getStorage() {
+  const dbType = getDatabaseType();
+  
+  if (dbType === 'mysql') {
+    console.log('Using MySQL storage implementation');
+    const { MySQLStorage } = await import('./mysql-storage');
+    return new MySQLStorage();
+  } else {
+    console.log('Using PostgreSQL storage implementation');
+    const { DatabaseStorage } = await import('./storage');
+    return new DatabaseStorage();
+  }
+}
+
 // Test database connection
 export async function testDatabaseConnection() {
   const dbType = getDatabaseType();
