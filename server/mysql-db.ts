@@ -2,10 +2,10 @@ import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 
 // Create MySQL connection
-const connection = mysql.createPool({
-  uri: process.env.DATABASE_URL!,
+const connection = mysql.createPool(process.env.DATABASE_URL!, {
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-  connectTimeout: 60000,
+  connectionLimit: 10,
+  queueLimit: 0,
   acquireTimeout: 60000,
   timeout: 60000,
 });

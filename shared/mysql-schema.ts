@@ -315,7 +315,7 @@ export const announcements = mysqlTable('announcements', {
   id: int('id').primaryKey().autoincrement(),
   title: varchar('title', { length: 255 }).notNull(),
   content: text('content').notNull(),
-  datePosted: date('date_posted').defaultNow(),
+  datePosted: timestamp('date_posted').defaultNow(),
   postedBy: int('posted_by'),
 });
 
@@ -325,7 +325,7 @@ export const news = mysqlTable('news', {
   title: varchar('title', { length: 255 }).notNull(),
   summary: text('summary'),
   imageUrl: varchar('image_url', { length: 255 }),
-  datePosted: date('date_posted').defaultNow(),
+  datePosted: timestamp('date_posted').defaultNow(),
   postedBy: int('posted_by'),
 });
 
