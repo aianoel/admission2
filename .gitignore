@@ -1,6 +1,113 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+out/
+*.local
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.mysql.example
+production.env
+
+# Database files
+*.db
+*.sqlite
+*.sql.backup
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory
+coverage/
+*.lcov
+.nyc_output/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+.npm/
+
+# Optional directories
+jspm_packages/
+.yarn-integrity
+.fusebox/
+.dynamodb/
+.tern-port
+.vscode-test/
+.serverless/
+
+# Framework specific
+.next/
+.nuxt/
+.vuepress/dist/
+
+# Replit specific
+.replit
+replit.nix
+.config/
+.local/
+
+# Deployment and hosting
+netlify.toml
+.netlify/
+
+# Hostinger deployment files
+hostinger-deployment/
+deployment_package/
+
+# Attached assets (optional - uncomment if you don't want to track these)
+# attached_assets/
+
+# Admin credentials and sensitive files
+admin_credentials.md
+admin_setup.md
+
+# Build scripts
+*.sh
+deploy-*.sh
+build-*.sh
